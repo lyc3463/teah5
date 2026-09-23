@@ -1,0 +1,214 @@
+import {Button, Form, Input, InputNumber, message, Radio, Select, Space, Spin} from "antd";
+import {connect,useLocation,history,useNavigate} from 'umi';
+import * as UnitServer from "@/services/unit";
+import {useEffect, useRef, useState} from "react";
+import {filterAndUpdateList} from "@/utils/OpenTool";
+import TypeErrorCode from "@/ModelTypes/TypeErrorCode";
+import * as HouseListServer from "@/services/house";
+import {NavBar} from "antd-mobile";
+const tailLayout = {
+    wrapperCol: { offset: 4 },
+};
+const EditUnit=(props:any)=>{
+    const navigate=useNavigate();
+    const [houseList,setHouseList]=useState([]);
+    // 房屋可增加面积
+    const [add_area,setadd_area]=useState(0);
+    // 房屋总楼层
+    const [floors,setfloors]=useState(0);
+    // 可租面积
+    const [rentable_area,setrentable_area]=useState(0);
+    // 每平单价
+    const [rent,setrent]=useState(0);
+    // 租金
+    const [zj,setzj]=useState(0);
+    const [form] = Form.useForm();
+    const formRef=useRef();
+    const [spinning,setspinning]=useState(false);
+    // 路由参数
+    const [uid,setUid]=useState<string|undefined>();
+    const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+    const onFinish=async (values:any)=>{
+        setspinning(false);
+        let res=await props.dispatch({
+            type:'Unit/edit',
+            payload:{...values,uid,add_area}
+        })
+        if (res.ErrorCode==0){
+            setspinning(false);
+            message.success('修改成功');
+            history.push('/houseManage/houseList');
+        }else {
+            message.error(res.Data);
+            setspinning(false);
+        }
+    }
+    const getUnitOne=async (e:string)=>{
+        let res:any=await UnitServer.one(e)
+        if (res?.ErrorCode==0){
+            formRef.current.setFieldsValue(res?.Data);
+            changehouse(res.Data.house_id);
+            setrentable_area(res.Data.rentable_area);
+            setrent(res.Data.rent);
+
+        }else {
+            message.error(res.Data)
+        }
+    }
+    useEffect(() => {
+        const searchParams = new URLSearchParams(location.search);
+        const id = searchParams.get('id');
+        setUid(id);
+        getUnitOne(id);
+        getHouseList();
+    }, []);
+    const getHouseList=()=>{
+        props.dispatch({
+            type:'House/fetch'
+        }).then((res:TypeErrorCode)=>{
+            if (res.ErrorCode==0){
+                setHouseList(res.Data);
+            }else {
+                message.error(res.Data);
+            }
+        })
+    };
+    // 选择楼层详情
+    const changehouse=(e)=>{
+        HouseListServer.one(e).then((res:TypeErrorCode)=>{
+            if (res.ErrorCode==0){
+                setadd_area(res.Data.residue_add_area);
+                setfloors(res.Data.floors)
+            }else {
+                message.error(res.Data)
+            }
+        })
+    };
+    // 可租面积
+    const changerentable_area=(e)=>{
+        setrentable_area(e);
+    };
+    // 每平方米单价
+    const changerent=(e)=>{
+        setrent(e);
+    };
+    useEffect(() => {
+        setzj(roundToTwoDecimalPlaces(rent*rentable_area));
+    }, [rent,rentable_area]);
+    // 保留两位小数整数
+    const roundToTwoDecimalPlaces=(number)=> {
+        return Math.round(number * 100) / 100;
+    };
+    const getContainerStyle = () => {
+        return {
+            padding: windowWidth <= 480 ? '12px' : '16px',
+            maxWidth: windowWidth <= 480 ? '100%' : '600px',
+            margin: '0 auto'
+        };
+    };
+    const getNavBarStyle = () => {
+        return {
+            '--height': windowWidth <= 480 ? '40px' : '48px',
+            '--border-bottom': 'none',
+            '--background-color': '#fff',
+            '--font-size': windowWidth <= 480 ? '16px' : '18px'
+        };
+    };
+    useEffect(() => {
+        const handleResize = () => {
+            setWindowWidth(window.innerWidth);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => {
+            window.removeEventListener('resize', handleResize);
+        };
+    }, []);
+    return(
+        <Spin spinning={spinning}>
+            <div style={getContainerStyle()}>
+                <NavBar
+                    onBack={() => navigate(-1)}
+                    style={getNavBarStyle()}
+                >
+                    修改单元
+                </NavBar>
+                <Form
+                    labelCol={{ span: 4 }}
+                    wrapperCol={{ span: 14 }}
+                    form={form}
+                    layout="horizontal"
+                    size={'large'}
+                    ref={formRef}
+                    onFinish={onFinish}
+                    style={{ marginTop: '1rem' }}
+                >
+                    <Form.Item  name='house_id' rules={[{ required: true, message: '请选择房屋' }]}>
+                        <Select onChange={changehouse}>
+                            {houseList.map((item:any,index:any)=>{
+                                return(
+                                    <Select.Option value={item.id} key={index}>
+                                        {item.house_name}
+                                    </Select.Option>
+                                )
+                            })}
+                        </Select>
+                    </Form.Item>
+                    <Form.Item name='unit_name' rules={[{ required: true, message: '请填写单元' }]}>
+                        <Input addonBefore="单元名称:"/>
+                    </Form.Item>
+                    <Form.Item name='floor_area' rules={[{ required: true, message: '建筑面积' }]}>
+                        <InputNumber addonBefore="建筑面积㎡:" min={0}/>
+                    </Form.Item>
+                    <Form.Item name='rentable_area' rules={[{ required: true, message: '可租面积' }]}>
+                        <InputNumber  addonBefore="可租面积㎡:"  min={0} onChange={changerentable_area}/>
+                    </Form.Item>
+                    <Form.Item name='floor' rules={[{ required: true, message: '所属楼层' }]}>
+                        <InputNumber max={floors} addonBefore="所属楼层(层):"/>
+                    </Form.Item>
+                    <Form.Item name='rent' rules={[{ required: true, message: '每平单价' }]}>
+                        <InputNumber addonBefore="每平单价(元):" min={0} onChange={changerent}/>
+                    </Form.Item>
+                    <Form.Item name='price' rules={[
+                        { required: true, message: '租金' },
+                        {
+                            validator: (_, value) => {
+                                if (value && value < zj) {
+                                    return Promise.reject(new Error(`租金不能少于${zj}元`));
+                                }
+                                return Promise.resolve();
+                            },
+                        },
+                    ]}>
+                        <InputNumber addonBefore="租金(元):" />
+                    </Form.Item>
+                    <Form.Item>
+                        <span style={{fontSize:'12px',color:'#555'}}>租金不能低于{zj}元=每平单价*可租面积</span>
+                    </Form.Item>
+                    <Form.Item name='unit_type' rules={[{ required: true, message: '单元类型' }]}>
+                        <Radio.Group >
+                            <Radio value={1}>商业</Radio>
+                            <Radio value={2}>办公</Radio>
+                        </Radio.Group>
+                    </Form.Item>
+                    <Form.Item>
+                        <InputNumber value={add_area} disabled  addonBefore="可增面积㎡:"/>
+                    </Form.Item>
+                    <Form.Item {...tailLayout}>
+                        <Space>
+                            <Button type="primary" htmlType="submit">
+                                修改
+                            </Button>
+                        </Space>
+                    </Form.Item>
+                </Form>
+            </div>
+        </Spin>
+    )
+}
+const mapStateToProps = (state: any) => {
+    return {
+        HouseList: state.House.list
+    }
+};
+export default connect(mapStateToProps) (EditUnit)

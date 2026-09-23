@@ -1,0 +1,18 @@
+import { getData } from '@/network/http';
+
+// 开门测试
+export function test(deviceSn:string) {
+    return getData(1191, [deviceSn]);
+}
+// 图片测试
+export function testQrCode(str:string) {
+    return getData(1192, [str]);
+}
+
+export function text() {
+    return getData(1449, []);
+}
+
+
+
+

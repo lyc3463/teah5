@@ -1,0 +1,137 @@
+import {
+    Effect,
+    Reducer,
+    Subscription,
+    history as UmiHistorty,
+} from 'umi';
+import * as ReportService from '@/services/order';
+import { message } from 'antd';
+import _ from 'lodash';
+import { StaticInfo } from '@/StaticInfo';
+import ReportType from '@/ModelTypes/TypeCable';
+import { fixPathname } from '@/utils/common';
+let pl={
+    page:1,
+    name:'',
+    phone:'',
+    state:0,
+    openID:0,
+    startDate:'2000-01-01',
+    endDate:'2099-01-01',
+    pageSize:50
+};
+
+export interface ReportState {
+    count: number;
+    ScoreSum: number;
+    pageTotal: number;
+}
+
+export interface ReportInterface {
+    namespace: 'Report';
+    state: Object;
+    effects: {
+        fetch: Effect;
+        fetchOne: Effect;
+        add: Effect;
+        edit: Effect;
+        remove: Effect;
+        reject: Effect;
+        fenpei: Effect;
+    };
+    reducers: {
+        list: Reducer<ReportType[]>;
+        one: Reducer<ReportType>;
+        count: Reducer<ReportState>;
+    };
+    subscriptions: { setup: Subscription };
+}
+const ReportModels: ReportInterface = {
+    namespace: 'Report',
+    state: {},
+    effects: {
+        *fetch({ type, payload }, { put, call, select }): any {
+            const res = yield call(ReportService.fetch,payload?payload:pl);
+            if (res.ErrorCode == 0) {
+                yield put({
+                    type: 'list',
+                    payload: { list: res.Data.data },
+                });
+                yield put({
+                    type: 'count',
+                    payload: { count: res.Data },
+                });
+            } else {
+                message.error(res.ErrorCode + res.Data);
+            }
+        },
+        *fetchOne({ type, payload }, { put, call, select }): any {
+            const list = yield select((state: any) => state.Report.list);
+            let one = _.find(list, { Id: payload });
+            // const data = yield request(`/api/user/${payload.id}`);
+            yield put({
+                type: 'one',
+                payload: { one },
+            });
+        },
+        *add({ payload }, { call, put,take }): any {
+            const result = yield call(ReportService.add, payload);
+            yield put({ type: 'fetch', payload: pl });
+            yield take('fetch/@@end');
+            return result
+        },
+        *edit({ payload, callback }, { call, put, take }): any {
+            const result = yield call(ReportService.edit, payload);
+            yield put({ type: 'fetch', payload: pl });
+            yield take('fetch/@@end');
+            return result
+        },
+        *remove({ payload }, { call, put ,take}): any {
+            const result = yield call(ReportService.remove, payload);
+            yield put({ type: 'fetch', payload: pl });
+            yield take('fetch/@@end');
+            return result
+        },
+        *reject({ type, payload }, { put, call, select }): any {
+            const result = yield call(ReportService.reject, payload);
+            // yield put({ type: 'fetch', payload: pl });
+            // yield take('fetch/@@end');
+            return result
+        },
+        *fenpei({ payload, callback }, { call, put, take }): any {
+            const result = yield call(ReportService.fenpei, payload);
+            yield put({ type: 'fetch', payload: pl });
+            yield take('fetch/@@end');
+            return result
+        },
+    },
+    reducers: {
+        list(state, action) {
+            return {
+                ...state,
+                ...action.payload,
+            };
+        },
+        one(state, action) {
+            return {
+                ...state,
+                ...action.payload,
+            };
+        },
+        count(state, action) {
+            return {
+                ...state,
+                ...action.payload,
+            };
+        },
+    },
+    subscriptions: {
+        setup({ dispatch, history }, done) {
+            return history.listen(({ location, action }) => {
+                const pathname = fixPathname(location.pathname);
+            });
+        },
+    },
+};
+
+export default ReportModels;
