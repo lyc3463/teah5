@@ -8,7 +8,7 @@ import * as EnterAmountService from '@/services/enterAmount';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import EnterAmountType from '@/ModelTypes/TypeCable';
+import EnterAmountType from '@/ModelTypes/TypeEnterAmount';
 import { fixPathname } from '@/utils/common';
 let pl={
     page:1,
@@ -52,6 +52,7 @@ const EnterAmountModels: EnterAmountInterface = {
             } else {
                 message.error(res.ErrorCode + res.Data);
             }
+            return res;
         },
         *fetchOne({ type, payload }, { put, call, select }): any {
             const list = yield select((state: any) => state.EnterAmount.list);
@@ -106,6 +107,19 @@ const EnterAmountModels: EnterAmountInterface = {
         setup({ dispatch, history }, done) {
             return history.listen(({ location, action }) => {
                 const pathname = fixPathname(location.pathname);
+                if (StaticInfo.userId > 0 && pathname === '/billLog/enterAmount/') {
+                    dispatch({
+                        type: 'fetch',
+                        payload: location.state,
+                    });
+                }
+                if (StaticInfo.userId > 0 && pathname === '/billLog/enterAmount/') {
+                    dispatch({
+                        type: 'fenye',
+                        payload: location.state,
+                    });
+                }
+
             });
         },
     },

@@ -8,8 +8,9 @@ import * as ZhanghupeizhiService from '@/services/zhanghupeizhi';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import ZhanghupeizhiType from '@/ModelTypes/TypeCable';
+import ZhanghupeizhiType from '@/ModelTypes/TypeZhanghupeizhi';
 import { fixPathname } from '@/utils/common';
+import {add} from "@/services/zhanghupeizhi";
 let pl={
     page:1,
     name:'',

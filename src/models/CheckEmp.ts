@@ -8,7 +8,7 @@ import * as EmpService from '@/services/emp';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import EmpType from '@/ModelTypes/TypeCable';
+import EmpType from '@/ModelTypes/TypeEmp';
 import { fixPathname } from '@/utils/common';
 
 let pl={
@@ -54,7 +54,7 @@ const EmpModels: EmpInterface = {
     effects: {
         *fetch({ type, payload }, { put, call, select }): any {
             const res = yield call(EmpService.fetch,payload?payload:pl);
-            console.log('res',res)
+            console.log('执行了fetch',res)
             if (res.ErrorCode == 0) {
                 yield put({
                     type: 'list',
@@ -78,26 +78,22 @@ const EmpModels: EmpInterface = {
         },
         *add({ payload }, { call, put,take }): any {
             const result = yield call(EmpService.add, payload);
-            yield put({ type: 'fetch', payload: pl });
-            yield take('fetch/@@end');
+
             return result
         },
         *edit({ payload, callback }, { call, put, take }): any {
             const result = yield call(EmpService.edit, payload);
-            yield put({ type: 'fetch', payload: pl });
-            yield take('fetch/@@end');
+
             return result
         },
         *delete({ payload }, { call, put,take }): any {
             const result = yield call(EmpService.remove, payload);
-            yield put({ type: 'fetch', payload: pl });
-            yield take('fetch/@@end');
+
             return result
         },
         *remove({ payload }, { call, put,take }): any {
             const result = yield call(EmpService.remove, payload);
-            yield put({ type: 'fetch', payload: pl });
-            yield take('fetch/@@end');
+
             return result
         },
         *fenye({ type, payload }, { put, call, select }): any {
@@ -115,10 +111,9 @@ const EmpModels: EmpInterface = {
             const result = yield call(EmpService.checkRemove, payload);
             return result
         },
-        *checkOK({ payload }, { call, put,take }): any {
+        *checkOK({ payload, callback }, { call, put, take }): any {
             const result = yield call(EmpService.check, payload);
-            yield put({ type: 'fetch', payload: pl });
-            yield take('fetch/@@end');
+
             return result
         },
     },

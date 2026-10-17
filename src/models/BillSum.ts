@@ -8,7 +8,7 @@ import * as BillService from '@/services/billSum';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import BillSumType from '@/ModelTypes/TypeCable';
+import BillSumType from '@/ModelTypes/TypeBillSum';
 import { fixPathname } from '@/utils/common';
 let pl={
     page:1,
@@ -107,7 +107,18 @@ const BannerModel: BillSumInterface = {
         setup({ dispatch, history }, done) {
             return history.listen(({ location, action }) => {
                 const pathname = fixPathname(location.pathname);
-
+                if (StaticInfo.userId > 0 && pathname === '/financeManage/billSum/') {
+                    dispatch({
+                        type: 'fetch',
+                        payload: location.state,
+                    });
+                }
+                if (StaticInfo.userId > 0 && pathname === '/financeManage/billSum/') {
+                    dispatch({
+                        type: 'fenye',
+                        payload: location.state,
+                    });
+                }
             });
         },
     },

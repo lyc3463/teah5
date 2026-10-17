@@ -8,7 +8,7 @@ import * as CustomService from '@/services/custom';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import CustomType from '@/ModelTypes/TypeCable';
+import CustomType from '@/ModelTypes/TypeCustom';
 import { fixPathname } from '@/utils/common';
 let pl={
     page:1,
@@ -52,11 +52,16 @@ const CustomModels: CustomInterface = {
     effects: {
         *fetch({ type, payload }, { put, call, select }): any {
             const res = yield call(CustomService.fetch,payload?payload:pl);
-
+            console.log('返回来的详情',res);
+            
             if (res.ErrorCode == 0) {
                 yield put({
                     type: 'list',
-                    payload: { list: res.Data },
+                    payload: { list: res.Data.data },
+                });
+                yield put({
+                    type: 'count',
+                    payload: { count: res.Data.count },
                 });
             } else {
                 message.error(res.ErrorCode + res.Data);

@@ -10,6 +10,7 @@ import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
 import HouseType from '@/ModelTypes/TypeCable';
 import { fixPathname } from '@/utils/common';
+import {reject} from "@/services/releaseSlip";
 let pl = {
     page:1,
     pageSize:50,
@@ -35,7 +36,7 @@ export interface HouseInterface {
         fetchOne: Effect;
         add: Effect;
         remove: Effect;
-        fenye: Effect;
+        reject: Effect;
         edit: Effect;
         check: Effect;
         release: Effect;
@@ -53,6 +54,7 @@ const ReleaseSlipModel: HouseInterface = {
     effects: {
         *fetch({ type, payload }, { put, call, select }): any {
             const res = yield call(ReleaseSlipService.fetch, payload?payload:pl);
+            console.log('props',res)
             if (res.ErrorCode == 0) {
                 yield put({
                     type: 'list',
@@ -106,16 +108,11 @@ const ReleaseSlipModel: HouseInterface = {
             yield take('fetch/@@end');
             return result
         },
-        *fenye({ type, payload }, { put, call, select }): any {
-            const res = yield call(ReleaseSlipService.fenye, payload?payload:pl);
-            if (res.ErrorCode == 0) {
-                yield put({
-                    type: 'count',
-                    payload: { count: res.Data },
-                });
-            } else {
-                message.error(res.ErrorCode + res.Data);
-            }
+        *reject({ type, payload }, { put, call, select }): any {
+            const result = yield call(ReleaseSlipService.reject, payload);
+            // yield put({ type: 'fetch', payload: pl });
+            // yield take('fetch/@@end');
+            return result
         },
     },
     reducers: {
@@ -142,6 +139,30 @@ const ReleaseSlipModel: HouseInterface = {
         setup({ dispatch, history }, done) {
             return history.listen(({ location, action }) => {
                 const pathname = fixPathname(location.pathname);
+                // if (StaticInfo.userId > 0 && pathname === '/houseManage/editUnit/') {
+                //     dispatch({
+                //         type: 'fetch',
+                //         payload: location.state,
+                //     });
+                // }
+                // if (StaticInfo.userId > 0 && pathname === '/waterCableManage/addCable/') {
+                //     dispatch({
+                //         type: 'fetch',
+                //         payload: location.state,
+                //     });
+                // }
+                // if (StaticInfo.userId > 0 && pathname === '/waterCableManage/editCable/') {
+                //     dispatch({
+                //         type: 'fetch',
+                //         payload: location.state,
+                //     });
+                // }
+                // if (StaticInfo.userId > 0 && pathname === '/gateManage/addDevice/') {
+                //     dispatch({
+                //         type: 'fetch',
+                //         payload: location.state,
+                //     });
+                // }
             });
         },
     },

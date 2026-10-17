@@ -8,7 +8,7 @@ import * as WorkOrderService from '@/services/workOrder';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import WaterRateType from '@/ModelTypes/TypeCable';
+import WaterRateType from '@/ModelTypes/TypeWaterRate';
 import { fixPathname } from '@/utils/common';
 let pl = {
     page:1,
@@ -52,7 +52,6 @@ const WorkOrderModel: HireInterface = {
     effects: {
         *fetch({ type, payload }, { put, call, select }): any {
             const res = yield call(WorkOrderService.fetch,payload?payload: pl);
-            console.log(res)
             if (res.ErrorCode == 0) {
                 yield put({
                     type: 'list',
@@ -69,7 +68,6 @@ const WorkOrderModel: HireInterface = {
         },
         *reject({ type, payload }, { put, call, select }): any {
             const result = yield call(WorkOrderService.reject, payload);
-
             return result
         },
         *add({ payload, callback }, { call, put, take }): any {
@@ -84,16 +82,16 @@ const WorkOrderModel: HireInterface = {
             yield take('fetch/@@end');
             return result
         },
-        *editStutes({ payload, callback }, { call, put, take }): any {
-            const result = yield call(WorkOrderService.editStutes, payload);
+        *edit({ payload, callback }, { call, put, take }): any {
+            const result = yield call(WorkOrderService.edit, payload);
             yield put({ type: 'fetch', payload: pl });
             yield take('fetch/@@end');
             return result
         },
-        *edit({ payload, callback }, { call, put, take }): any {
-            const result = yield call(WorkOrderService.edit, payload);
-            // yield put({ type: 'fetch', payload: pl });
-            // yield take('fetch/@@end');
+        *editStutes({ payload, callback }, { call, put, take }): any {
+            const result = yield call(WorkOrderService.editStutes, payload);
+            yield put({ type: 'fetch', payload: pl });
+            yield take('fetch/@@end');
             return result
         },
         *remove({ payload }, { call, put ,take}): any {
@@ -128,6 +126,19 @@ const WorkOrderModel: HireInterface = {
         setup({ dispatch, history }, done) {
             return history.listen(({ location, action }) => {
                 const pathname = fixPathname(location.pathname);
+                // if (StaticInfo.userId > 0 && pathname === '/reportFormsManage/waterRate/') {
+                //     dispatch({
+                //         type: 'fetch',
+                //         payload: location.state,
+                //     });
+                // }
+                // if (StaticInfo.userId > 0 && pathname === '/reportFormsManage/waterRate/') {
+                //     dispatch({
+                //         type: 'fenye',
+                //         payload: location.state,
+                //     });
+                // }
+
             });
         },
     },

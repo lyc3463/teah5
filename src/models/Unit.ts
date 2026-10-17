@@ -8,8 +8,9 @@ import * as UnitService from '@/services/unit';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import UnitType from '@/ModelTypes/TypeCable';
+import UnitType from '@/ModelTypes/TypeNuit';
 import { fixPathname } from '@/utils/common';
+import {remove} from "@/services/unit";
 let pl = {
     page:1,
     name: '',
@@ -123,6 +124,42 @@ const UnitModel: UnitInterface = {
         setup({ dispatch, history }, done) {
             return history.listen(({ location, action }) => {
                 const pathname = fixPathname(location.pathname);
+                if (StaticInfo.userId > 0 && pathname === '/houseManage/unit/') {
+                    dispatch({
+                        type: 'fetch',
+                        payload: location.state,
+                    });
+                }
+                if (StaticInfo.userId > 0 && pathname === '/enter/addStaff/') {
+                    dispatch({
+                        type: 'fetch',
+                        payload: location.state,
+                    });
+                }
+                if (StaticInfo.userId > 0 && pathname === '/check/contracteInfo/') {
+                    dispatch({
+                        type: 'fetch',
+                        payload: location.state,
+                    });
+                }
+                if (StaticInfo.userId > 0 && pathname === '/enter/editStaff/') {
+                    dispatch({
+                        type: 'fetch',
+                        payload: location.state,
+                    });
+                }
+                if (StaticInfo.userId > 0 && pathname === '/houseManage/houseHire/') {
+                    dispatch({
+                        type: 'fetch',
+                        payload: location.state,
+                    });
+                }
+                if (StaticInfo.userId > 0 && pathname === '/houseManage/houseHire/') {
+                    dispatch({
+                        type: 'fenye',
+                        payload: location.state,
+                    });
+                }
             });
         },
     },

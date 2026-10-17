@@ -8,7 +8,7 @@ import * as HouseService from '@/services/house';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import HouseType from '@/ModelTypes/TypeCable';
+import HouseType from '@/ModelTypes/TypeHouse';
 import { fixPathname } from '@/utils/common';
 let pl = {
     name: '',

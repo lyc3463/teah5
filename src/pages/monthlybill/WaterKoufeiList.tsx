@@ -51,7 +51,7 @@ const WaterKoufeiList=()=>{
         dateWaterService.fetch(page,cid,name,startDate,endDate,tenantId,recordStatus,'',pageSize).then((res:TypeErrorCode)=>{
             if (res.ErrorCode==0){
                 setspinning(false);
-                setwaterRateList(res.Data);
+                setwaterRateList(res.Data?.data);
             }else {
                 setspinning(false);
                 message.error(res.Data);
@@ -59,22 +59,22 @@ const WaterKoufeiList=()=>{
         })
     };
     // 获取水表扣费记录分页
-    const getwaterFenye=()=>{
-        dateWaterService.fenye(cid,name,startDate,endDate,tenantId,recordStatus,'',pageSize).then((res:TypeErrorCode)=>{
-            if (res.ErrorCode==0){
-                setcount(res.Data.count);
-                setmoneySum(res.Data.moneySum);
-                setenergyUsage(res.Data.energyUsage);
-            }else {
-                message.error(res.Data);
-            }
-        })
-    };
+    // const getwaterFenye=()=>{
+    //     dateWaterService.fenye(cid,name,startDate,endDate,tenantId,recordStatus,'',pageSize).then((res:TypeErrorCode)=>{
+    //         if (res.ErrorCode==0){
+    //             setcount(res.Data.count);
+    //             setmoneySum(res.Data.moneySum);
+    //             setenergyUsage(res.Data.energyUsage);
+    //         }else {
+    //             message.error(res.Data);
+    //         }
+    //     })
+    // };
     // 搜索
     const sousuo=()=>{
         setPage(1);
         getwaterRateList();
-        getwaterFenye();
+        // getwaterFenye();
     };
     // 监听页数
     const onChange=(e:number,pageSize:number)=>{
@@ -82,7 +82,7 @@ const WaterKoufeiList=()=>{
         setPageSize(pageSize);
     };
     useEffect(() => {
-        getwaterFenye();
+        // getwaterFenye();
     }, []);
     useEffect(() => {
         getwaterRateList();

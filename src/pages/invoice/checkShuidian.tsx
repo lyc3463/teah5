@@ -63,7 +63,7 @@ const CheckShuidian=(props)=>{
             payload:{page,startDate,endDate,openId,stutes,pageSize,riseName,tenantName,type,phone}
         }).then((res:TypeErrorCode)=>{
             if (res.ErrorCode==0){
-                setList(res.Data);
+                setList(res.Data?.data);
             }
         })
     };

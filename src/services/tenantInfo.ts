@@ -1,4 +1,4 @@
-import { getData ,postData} from '@/network/http';
+import {getData, postData} from '@/network/http';
 
 export function fetch(vals:any) {
     return getData(1166, [vals.page,vals.content,vals.phone,vals.startDate,vals.endDate,vals.stutes,vals.openid,vals.pageSize]);
@@ -18,7 +18,6 @@ export function remove(vals:any) {
 export function one(vals:any) {
     return getData(1090, [vals]);
 }
-
 export function fenye(vals:any) {
     return getData(1167, [vals.content,vals.phone,vals.startDate,vals.endDate,vals.stutes,vals.openid,vals.pageSize]);
 }
@@ -28,5 +27,3 @@ export function userList() {
 export function addFp(vals:any) {
     return getData(1387, [vals.appId,vals.upimg,vals.conten]);
 }
-
-

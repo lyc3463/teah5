@@ -1,0 +1,40 @@
+/* 手机端RangePicker适配 */
+@media (max-width: 768px) {
+  /* 强制弹出层宽度100%，撑满屏幕 */
+  .ant-picker-dropdown {
+    width: calc(100vw - 24px) !important;
+    left: 12px !important;
+    right: 12px !important;
+  }
+  /* 强制双日历变成单日历，垂直排列 */
+  .ant-picker-panels {
+    flex-direction: column !important;
+  }
+  .ant-picker-panel {
+    width: 100% !important;
+  }
+  /* 放大日期单元格触摸区域 */
+  .ant-picker-cell {
+    padding: 6px 0 !important;
+  }
+  .ant-picker-cell-inner {
+    width: 36px !important;
+    height: 36px !important;
+    line-height: 36px !important;
+    font-size: 16px !important;
+  }
+  /* 放大底部按钮 */
+  .ant-picker-footer .ant-btn {
+    height: 40px !important;
+    font-size: 16px !important;
+    padding: 0 20px !important;
+  }
+  /* 输入框高度适配手机 */
+  .ant-picker {
+    width: 100% !important;
+    height: 44px !important;
+  }
+  .ant-picker-input input {
+    font-size: 16px !important; /* 防止iOS自动缩放页面 */
+  }
+}

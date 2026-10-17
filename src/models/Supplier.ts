@@ -8,14 +8,14 @@ import * as ThingListvice from '@/services/supplier';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import StaffType from '@/ModelTypes/TypeCable';
+import StaffType from '@/ModelTypes/TypeStaff';
 import { fixPathname } from '@/utils/common';
 let pl={
     page:1,
     supplierName:'',
     personName:'',
     personPhone:'',
-    pageSize:50
+    pageSize:1000
 }
 export interface StaffCountState {
     count: number;
@@ -48,6 +48,7 @@ const SupplierModel: StaffInterface = {
     effects: {
         *fetch({ type, payload }, { put, call, select }): any {
             const res = yield call(ThingListvice.fetch, payload?payload:pl);
+            console.log('res',res);
             if (res.ErrorCode == 0) {
                 yield put({
                     type: 'list',

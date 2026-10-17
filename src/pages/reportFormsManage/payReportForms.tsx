@@ -1,5 +1,6 @@
 import {connect} from "umi";
 import {Tabs} from "antd";
+import PrepaymentReportForms from "@/pages/reportFormsManage/prepaymentReportForms";
 import UserPayReportForms from "@/pages/reportFormsManage/userPayReportForms";
 import AppUserPayReportForms from "@/pages/reportFormsManage/appUserPayReportForms";
 import {NavBar} from "antd-mobile";
@@ -49,9 +50,12 @@ const PayReportForms=(props)=>{
                 <Tabs.TabPane tab='租户报表'  key='1'>
                     <UserPayReportForms/>
                 </Tabs.TabPane>
-                <Tabs.TabPane tab='用户报表'  key='2'>
-                    <AppUserPayReportForms/>
+                <Tabs.TabPane tab='预付费报表' key='2'>
+                    <PrepaymentReportForms/>
                 </Tabs.TabPane>
+                {/* <Tabs.TabPane tab='用户报表'  key='2'>
+                    <AppUserPayReportForms/>
+                </Tabs.TabPane> */}
             </Tabs>
         </div>
     )

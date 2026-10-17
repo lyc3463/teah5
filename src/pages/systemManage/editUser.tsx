@@ -22,7 +22,7 @@ const EditUser=(props:any)=>{
     const [roleList,setRoleList]=useState([]);
     const [isTask,setisTask]=useState([0]);
     const formRef =useRef();
-    const [selected, setSelected] = useState<string[]>(Array(441).fill('0'));
+    const [selected, setSelected] = useState<string[]>(Array(610).fill('0'));
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
     const [qyList,setqyList]=useState([]);
     const [qyId,setqyId]=useState(0);

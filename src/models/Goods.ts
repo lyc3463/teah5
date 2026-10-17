@@ -49,9 +49,15 @@ const GoodsModel: GongsiInterface = {
         *fetch({ type, payload }, { put, call, select }): any {
             const res = yield call(GongsiService.fetch, payload?payload:pl);
             if (res.ErrorCode == 0) {
+                console.log(res.Data);
+                
                 yield put({
                     type: 'list',
-                    payload: { list: res.Data },
+                    payload: { list: res.Data.data },
+                });
+                yield put({
+                    type: 'count',
+                    payload: { count: res.Data.count },
                 });
             } else {
                 message.error(res.ErrorCode + res.Data);
@@ -121,6 +127,30 @@ const GoodsModel: GongsiInterface = {
         setup({ dispatch, history }, done) {
             return history.listen(({ location, action }) => {
                 const pathname = fixPathname(location.pathname);
+                // if (StaticInfo.userId > 0 && pathname === '/xiangmu/gongsiguanli/') {
+                //     dispatch({
+                //         type: 'fetch',
+                //         payload: location.state,
+                //     });
+                // }
+                // if (StaticInfo.userId > 0 && pathname === '/xiangmu/gongsiguanli/') {
+                //     dispatch({
+                //         type: 'fenye',
+                //         payload: location.state,
+                //     });
+                // }
+                // if (StaticInfo.userId > 0 && pathname === '/kehu/byzhuhu/') {
+                //   dispatch({
+                //     type: 'fetch',
+                //     payload: location.state,
+                //   });
+                // }
+                // if (StaticInfo.userId > 0 && pathname === '/kehu/editByzhuhu/') {
+                //     dispatch({
+                //         type: 'fetch',
+                //         payload: location.state,
+                //     });
+                // }
             });
         },
     },

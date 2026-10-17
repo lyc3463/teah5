@@ -1,27 +1,13 @@
-import {
-    Button,
-    Form,
-    Image,
-    Input,
-    InputNumber,
-    List,
-    message,
-    Modal,
-    Pagination,
-    Select,
-    Space,
-    Spin,
-    Table,
-    Tag
-} from "antd";
+import {Button, Image, Input, InputNumber, List, message, Modal, Pagination, Space, Spin, Table} from "antd";
 import {connect,history} from 'umi';
 import * as AppUserService from '@/services/appUser';
 import {useCallback, useEffect, useRef, useState} from "react";
-import {qxTree} from '@/constants/wxMenu'
-import {buildTree,ensureArrayLength} from "@/utils/OpenTool";
+import {qxTree} from '@/constants/qxMenu/wxMenu';
+import {buildTree, checkSessionStorage, ensureArrayLength, exportDataToExcel, updateSessionStorage} from "@/utils/OpenTool";
+import TypeErrorCode from "@/ModelTypes/TypeErrorCode";
 import {StaticInfo} from "@/StaticInfo";
-import {NavBar, Popup} from "antd-mobile";
-import PageLayout from "@/components/PageLayout ";
+import TableMobile from '@/components/TableMobile';
+import {ArrowLeftOutlined} from '@ant-design/icons';
 const checkboxRelationMap = {
     190: [209, 263],
     275: [272],
@@ -40,43 +26,140 @@ const checkboxRelationMap = {
     110: [111],
     426: [427, 428, 429, 430],
 };
-const UserList=(props:any)=>{
+const Wcxuserlist=(props:any)=>{
     const treeData = buildTree(qxTree);
     const [isSpinning,setIsSpinning]=useState(false);
     const [page,setPage]=useState(1);
-    const [balance,setbalance]=useState(0);
+    const [balance,setbalance]=useState(checkSessionStorage('/kehu/wcxuserlist/','balance')||0);
     const [pageSize,setpageSize]=useState(50);
-    const [name,setName]=useState('');
-    const [phone,setPhone]=useState('');
+    const [name,setName]=useState(checkSessionStorage('/kehu/wcxuserlist/','name')||'');
+    const [phone,setPhone]=useState(checkSessionStorage('/kehu/wcxuserlist/','phone')||'');
     const [uqx,setUqx]=useState([]);
     // 弹窗
     const [isOpen,setIsOpen]=useState(false);
     const [selected, setSelected] = useState<string[]>(Array(562).fill('0'));
     const [appid,setAppid]=useState(0);
-    const [filterOpen,setFilterOpen]=useState(false);
-    // 新增：存储已加载图片的行ID（避免重复加载）
     const [loadedImageIds, setLoadedImageIds] = useState<Set<string>>(new Set());
     // 行ref数组
     const rowRefs = useRef<HTMLDivElement[]>([]);
     // 交叉观察器实例
     const observerRef = useRef<IntersectionObserver | null>(null);
+    const columns =[
+        {
+            title: '微信头像',
+            dataIndex: 'userImage',
+            key: 'userImage',
+            ellipsis: true,
+            render: (text: string, record: any) => {
+                const isImageLoaded = loadedImageIds.has(record.userId.toString());
+                let imageUrl = '';
+                if (isImageLoaded && text) {
+                    const textStr = String(text || '');
+                    imageUrl = textStr && textStr.endsWith('.png')
+                        ? `${window.ServerConfig.imgServer}${textStr}`
+                        : `${window.ServerConfig.imgServer}${textStr}_min.png`;
+                }
+                // 改用原生 img 标签（保留 AntD 的样式和 fallback 逻辑）
+                return (
+                    <div style={{width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                        <Image
+                            src={imageUrl || 'https://placeholder.pics/svg/50x50/EEEEEE/999999/加载中...'}
+                            style={{width: '100%', height: '100%', objectFit: 'cover'}}
+                            alt="物品图片"
+                            // 原生懒加载属性（正确用法：字符串值 'lazy'）
+                            loading="lazy"
+                            // fallback 逻辑：图片加载失败时显示占位图
+                            onError={(e) => {
+                                e.target.src = 'https://placeholder.pics/svg/50x50/EEEEEE/999999/暂无图片';
+                            }}
+                        />
+                    </div>
+                );
+            }
+        },
+        {
+            title: '微信呢称',
+            dataIndex: 'userName',
+            key: 'userName',
+        },
+        {
+            title: '用户手机号',
+            dataIndex: 'phone',
+            key: 'phone',
+        },
+        // {
+        //     title: '余额(元)',
+        //     dataIndex: 'balance',
+        //     key: 'balance',
+        //     render:(text:any,record:any,)=>{
+        //         return(
+        //             <div>
+        //                 {record.balance.toFixed(2)}元
+        //             </div>
+        //         )
+        //     }
+        // },
+        // {
+        //     title: '账单(元)',
+        //     dataIndex: 'billMoney',
+        //     key: 'billMoney',
+        //     render:(text:any,record:any,)=>{
+        //         return(
+        //             <div>
+        //                 {record.billMoney.toFixed(2)}元
+        //             </div>
+        //         )
+        //     }
+        // },
+        // {
+        //     title: '积分',
+        //     dataIndex: 'integral',
+        //     key: 'integral',
+        //     render:(text:any,record:any,)=>{
+        //         return(
+        //             <div>
+        //                 {record.integral.toFixed(2)}元
+        //             </div>
+        //         )
+        //     }
+        // },
+        // {
+        //     title: '权限',
+        //     dataIndex: 'qx',
+        //     key: 'qx',
+        //     render:(text:any,record:any,)=>{
+        //         return(
+        //             <Space>
+        //                 <Button type='primary' onClick={()=>editInfo(record)}>详情</Button>
+        //                 {/*<Button type='primary' onClick={()=>toChangePark(record)}>更改园区</Button>*/}
+        //             </Space>
 
+        //         )
+        //     }
+        // },
+    ];
+    // 监听数据变化，重置图片加载状态
+    useEffect(() => {
+        setLoadedImageIds(new Set());
+        // 初始化交叉观察器
+        initObserver();
+    }, []);
     // 监听手机号
     const changePhone=(e)=>{
         setPhone(e.target.value);
+        updateSessionStorage('/kehu/wcxuserlist/','phone',e.target.value);
     };
     // 监听名字
     const changeName=(e)=>{
         setName(e.target.value);
-    };
-    const toChangePark=(e)=>{
-        history.push(`/kehu/changePark?id=${e.id}`);
+        updateSessionStorage('/kehu/wcxuserlist/','name',e.target.value);
     };
     // 搜索按钮
     const shousuo=()=>{
         setPage(1);
         getList();
-        setFilterOpen(false);
+        console.log('props',props);
+        
     };
     const getList=()=>{
         props.dispatch({
@@ -84,7 +167,6 @@ const UserList=(props:any)=>{
             payload:{page,name,phone,pageSize,balance}
         });
     };
-
     // 监听页数
     const onChange=(page:number,pageSize:number)=>{
         setPage(page);
@@ -95,25 +177,12 @@ const UserList=(props:any)=>{
     }, [page,pageSize]);
     // 弹窗信息
     const editInfo=(vla:any)=>{
-        setAppid(vla.id);
+        setAppid(vla.userId);
         setIsOpen(true);
         const authorityString = vla.authority;
         const splitArray = authorityString.split('');
         const adjustedArray = ensureArrayLength(splitArray, selected.length, '0');
         setSelected(adjustedArray);
-    };
-    // 获取小程序信息详情
-    const getOne=(id:number)=>{
-        AppUserService.one(id).then((res:any)=>{
-            if (res.ErrorCode==0){
-                const authorityString = res.Data.authority;
-                const splitArray = authorityString.split('');
-                const adjustedArray = ensureArrayLength(splitArray, selected.length, '0');
-                setSelected(adjustedArray);
-            }else{
-                message.error(res.Data);
-            }
-        })
     };
     // 确定编辑权限
     const onOk=()=>{
@@ -173,14 +242,28 @@ const UserList=(props:any)=>{
         // 确保值不小于 0
         const newValue = value !== undefined ? Math.max(value, 0) : 0;
         setbalance(newValue);
+        updateSessionStorage('/kehu/wcxuserlist/','balance',newValue);
     };
-    // 监听数据变化，重置图片加载状态
-    useEffect(() => {
-        setLoadedImageIds(new Set());
-        // 初始化交叉观察器
-        initObserver();
-    }, []);
-
+    const exportToExcel=()=>{
+        setIsSpinning(true);
+        AppUserService.fetch({page:1,name,phone,pageSize:100000,balance}).then((res:TypeErrorCode)=>{
+            if (res.ErrorCode==0){
+                let headers=['微信昵称','用户手机号'];
+                const ws_data = [
+                    headers.map(header => ({ v: header, t: 's' })), // 表头
+                    ...res.Data.map(item => [
+                        item.appUser_name,
+                        item.appUser_phone,
+                    ].map(value => ({ v: value, t: typeof value === 'number' ? 'n' : 's' }))) // 数据行，根据值类型设置单元格类型
+                ];
+                exportDataToExcel(ws_data);
+                setIsSpinning(false);
+            }else {
+                message.error(res.Data);
+                setIsSpinning(false);
+            }
+        })
+    };
     // 初始化交叉观察器：检测行是否进入可视区域
     const initObserver = useCallback(() => {
         // 销毁旧的观察器
@@ -213,138 +296,90 @@ const UserList=(props:any)=>{
             }
         });
     }, [loadedImageIds]);
-    // 清理观察器
-    useEffect(() => {
-        return () => {
-            if (observerRef.current) {
-                observerRef.current.disconnect();
-            }
-        };
-    }, []);
-    const renderImage = (text, record) => {
-        const isImageLoaded = loadedImageIds.has(record.userId.toString());
-        let imageUrl = '';
-        if (isImageLoaded && text) {
-            const textStr = String(text || '');
-            imageUrl = textStr.endsWith('.png')
-                ? `${window.ServerConfig.imgServer}${textStr}`
-                : `${window.ServerConfig.imgServer}${textStr}_X.png`;
-        }
-        return (
-            <div style={{ width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <img
-                    src={imageUrl || 'https://placeholder.pics/svg/50x50/EEEEEE/999999/加载中...'}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    alt="物品图片"
-                    onError={(e) => {
-                        e.target.src = 'https://placeholder.pics/svg/50x50/EEEEEE/999999/暂无图片';
-                    }}
-                />
-            </div>
-        );
-    };
     return(
         <Spin spinning={isSpinning}>
-            <PageLayout
-                title="小程序列表"
-                onBack={()=>history.push('/dashboard/')}
-            >
-                <List style={{padding:'0 10px'}}>
-                    <List.Item>
-                        <Space style={{paddingBottom:'10px'}}>
-                            <Button type="primary" onClick={() => setFilterOpen(true)}>
-                                筛选
-                            </Button>
-                        </Space>
-                    </List.Item>
-                </List>
-                <Popup
-                    visible={filterOpen}
-                    onMaskClick={() => setFilterOpen(false)}
-                >
-                    <div style={{ padding: 16 }}>
-                        <div style={{ marginTop: 15 }}>手机号</div>
+            <Button type="text" size="small" icon={<ArrowLeftOutlined />} onClick={() => history.push('/dashboard')}></Button>
+            <List style={{backgroundColor:'#f5f5f5',padding:'10px',marginBottom:"20px",border:'1px solid #e3e3e3',borderRadius:'4px'}}>
+                <List.Item>
+                    <Space>
                         <Input
+                            addonBefore="手机号:"
                             onChange={changePhone}
                             value={phone}
                         />
-                        <div style={{ marginTop: 15 }}>姓名</div>
                         <Input
+                            addonBefore="姓名:"
                             onChange={changeName}
                             value={name}
                         />
-                        <div style={{ marginTop: 15 }}>余额</div>
                         <InputNumber
+                            addonBefore="余额:"
                             onChange={changeBalance}
                             min={0}
                             value={balance}
                         />
-                        <Button
-                            block
-                            color="primary"
-                            style={{ marginTop: 20 }}
-                            onClick={shousuo}
-                        >
+                        <Button type="primary" onClick={shousuo}>
                             搜索
                         </Button>
-                    </div>
-                </Popup>
-                <div style={{
-                    height: 'calc(100vh - 230px)',
-                    overflowY: 'auto',
-                    padding: '0 12px'
-                }}>
-                    {
-                        props.AppUserList&&props.AppUserList.length>0?props.AppUserList.map((item:any,index:number)=>{
-                            return (
-                                <List.Item
-                                    key={item.userId}
-                                    style={{
-                                        border: '1px solid #e5e6eb',
-                                        borderRadius: '8px',
-                                        padding: '16px',
-                                        marginBottom: '12px',
-                                        backgroundColor: '#fff',
-                                        boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-                                    }}
-                                    ref={(el) => {
-                                        if (el) {
-                                            el.dataset.rowId = item.userId; // 存储行ID
-                                            rowRefs.current[index] = el;
-                                            observerRef.current?.observe(el);
-                                        }
-                                    }}
-                                >
-                                    <div style={{ fontSize: 16, color: "#666", marginTop: 4 }}>{renderImage(item.userImage, item)}</div>
-                                    <div style={{ fontSize: 16, color: "#666", marginTop: 4 }}>微信呢称: {item.userName}</div>
-                                    <div style={{ fontSize: 16, color: "#666", marginTop: 4 }}>手机号: {item.phone}</div>
-                                    <div style={{ fontSize: 16, color: "#666", marginTop: 4 }}>余额(元): {item.balance.toFixed(2)}</div>
-                                    <div style={{ fontSize: 16, color: "#666", marginTop: 4 }}>账单(元): {item.billMoney.toFixed(2)}</div>
-                                    <div style={{ fontSize: 16, color: "#666", marginTop: 4 }}>积分(分): {item.integral.toFixed(2)}</div>
-                                    <Space>
-                                        <Button  type='primary' onClick={()=>editInfo(item)}>权限</Button>
-                                    </Space>
-                                </List.Item>
-                            )
-                        }):''
-                    }
-                </div>
-                <div style={{display:'flex',justifyContent:'space-around',marginTop:'5px'}}>
-                    <div>总余额：{props.count?props.count.balanceSum:''}元</div>
-                    <div>总账单：{props.count?props.count.billMoneySum:''}元</div>
-                </div>
-                <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-                    {props.count?<Pagination total={props.count.count} showSizeChanger pageSize={pageSize} current={page}  onChange={onChange} pageSizeOptions={[50,100,500,1000,10000]}/>:''}
-                </div>
-                {/*编辑权限弹窗*/}
-                <Modal open={isOpen} title={'编辑权限'} onCancel={()=>setIsOpen(false)} onOk={onOk} loading={isSpinning}>
-                    <Space>
-                        <Button type='primary' onClick={()=>setSelected(Array(441).fill('1'))}>全选</Button>
-                        <Button type='primary' onClick={()=>setSelected(Array(441).fill('0'))}>反选</Button>
+                        {uqx[375]=='1'?<Button type="primary" onClick={exportToExcel}>导出</Button> :''}
                     </Space>
-                    <TreeMenu tree={treeData} selected={selected} setSelected={setSelected} />
-                </Modal>
-            </PageLayout>
+                </List.Item>
+            </List>
+            <TableMobile
+                columns={columns}
+                rowKey={(columns) => columns.userId}
+                pagination={false}
+                dataSource={props.AppUserList}
+                size='small'
+                scroll={{y:'60vh'}}
+                rowClassName={(record, index) =>
+                    index % 2 === 1 ? 'tbodd' : 'tbeven'
+                }
+                onRow={(record, index) => ({
+                    ref: (el) => {
+                        if (el) {
+                            el.dataset.rowId = record.userId; // 存储行ID
+                            rowRefs.current[index] = el;
+                            // 观察该行元素
+                            observerRef.current?.observe(el);
+                        }
+                    },
+                })}
+                // summary={(columns) => (
+                //     <Table.Summary fixed>
+                //         <Table.Summary.Row>
+                //             <Table.Summary.Cell
+                //                 index={1}
+                //             >
+                //                 统计
+                //             </Table.Summary.Cell>
+                //             <Table.Summary.Cell index={0}>
+                //                 总人数:{props.count?props.count.count:''}人
+                //             </Table.Summary.Cell>
+                //             <Table.Summary.Cell index={0}>
+                //             </Table.Summary.Cell>
+                //             <Table.Summary.Cell index={5}>
+                //                 {props.count?props.count.balanceSum.toFixed(2):''}元
+                //             </Table.Summary.Cell>
+                //             <Table.Summary.Cell index={7}>
+                //                 {props.count?props.count.billMoneySum.toFixed(2):''}元
+                //             </Table.Summary.Cell>
+                //             <Table.Summary.Cell index={6}>
+                //                 {props.count?props.count.integralSum.toFixed(2):''}分
+                //             </Table.Summary.Cell>
+                //         </Table.Summary.Row>
+                //     </Table.Summary>
+                // )}
+            />
+            {props.count?<Pagination total={props.count.count} showSizeChanger pageSize={pageSize} current={page}  onChange={onChange} pageSizeOptions={[50,100,500,1000,10000]}/>:''}
+            {/*编辑权限弹窗*/}
+            <Modal open={isOpen} title={'编辑权限'} onCancel={()=>setIsOpen(false)} onOk={onOk} loading={isSpinning}>
+                <Space>
+                    <Button type='primary' onClick={()=>setSelected(Array(562).fill('1'))}>全选</Button>
+                    <Button type='primary' onClick={()=>setSelected(Array(562).fill('0'))}>反选</Button>
+                </Space>
+                <TreeMenu tree={treeData} selected={selected} setSelected={setSelected} />
+            </Modal>
         </Spin>
     )
 }
@@ -355,4 +390,4 @@ const mapStateToProps = (state: any) => {
     }
 };
 
-export default connect(mapStateToProps) (UserList)
+export default connect(mapStateToProps) (Wcxuserlist)

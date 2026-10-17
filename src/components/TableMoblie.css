@@ -1,0 +1,115 @@
+/* 手机端卡片表格样式 */
+.mobile-table-card-container {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+}
+
+/* 卡片基础样式 */
+.mobile-card {
+    margin-bottom: 12px;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    background: #fff !important;
+    overflow: hidden;
+}
+
+/* 奇偶行背景色（保留PC端斑马纹效果） */
+.mobile-card.card-odd {
+    background-color: #fafafa !important;
+}
+
+.mobile-card.card-even {
+    background-color: #ffffff !important;
+}
+
+/* 卡片内容区域 */
+.mobile-card-content {
+    padding: 4px 0;
+}
+
+/* 每一行标签+值 */
+.mobile-card-row {
+    display: flex;
+    align-items: flex-start;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.mobile-card-row:last-child {
+    border-bottom: none;
+}
+
+/* 字段标签 */
+.mobile-card-label {
+    flex-shrink: 0;
+    width: 100px;
+    color: #666;
+    font-weight: 400;
+    margin-right: 8px;
+}
+
+/* 字段值 */
+.mobile-card-value {
+    flex: 1;
+    color: #333;
+    font-weight: 500;
+    min-width: 0; /* 关键：保证ellipsis生效 */
+}
+
+/* 操作栏底部 */
+.mobile-card-footer {
+    margin-top: 8px;
+    padding-top: 12px;
+    border-top: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+/* 适配按钮大小 */
+.mobile-card-footer .ant-btn {
+    padding: 4px 12px;
+    font-size: 13px;
+    height: auto;
+    min-height: 32px;
+}
+
+/* 分页区域 */
+.mobile-pagination {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 0 24px;
+    gap: 8px;
+}
+
+.mobile-pagination .ant-pagination {
+    margin: 0;
+}
+
+.page-info {
+    font-size: 12px;
+    color: #999;
+}
+
+/* 小屏幕适配 */
+@media screen and (max-width: 375px) {
+    .mobile-card-label {
+        width: 70px;
+        font-size: 13px;
+    }
+    
+    .mobile-card-row {
+        font-size: 13px;
+    }
+}
+
+/* 安全区域适配（针对全面屏手机底部） */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .mobile-table-card-container {
+        padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    }
+}

@@ -14,3 +14,6 @@ export function edit(vals:any) {
 export function remove(vals:any) {
     return getData(1070, [vals]);
 }
+
+
+

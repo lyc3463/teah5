@@ -12,12 +12,12 @@ import { fixPathname } from '@/utils/common';
 let pl={
     page:1,
     carNo:'',
-    appId:0,
+    userId:0,
     stutes:0,
-    pageSize:50,
+    pageSize:20,
     userType:1,
     uName:'',
-    uPhone:'',
+    uPhone:''
 }
 
 export interface CarManageCountState {
@@ -35,6 +35,7 @@ export interface CarManageInterface {
         add: Effect;
         edit: Effect;
         remove: Effect;
+        fenye: Effect;
         check: Effect;
     };
     reducers: {
@@ -51,6 +52,7 @@ const CarManageModels: CarManageInterface = {
         *fetch({ type, payload }, { put, call, select }): any {
             const res = yield call(CarManageService.fetch, payload?payload:pl);
             if (res.ErrorCode == 0) {
+                console.log('res',res);
                 yield put({
                     type: 'list',
                     payload: { list: res.Data.data },
@@ -97,7 +99,17 @@ const CarManageModels: CarManageInterface = {
             yield take('fetch/@@end');
             return result
         },
-
+        *fenye({ type, payload }, { put, call, select }): any {
+            const res = yield call(CarManageService.fenye,payload?payload:pl);
+            if (res.ErrorCode == 0) {
+                yield put({
+                    type: 'count',
+                    payload: { count: res.Data },
+                });
+            } else {
+                message.error(res.ErrorCode + res.Data);
+            }
+        },
     },
     reducers: {
         list(state, action) {

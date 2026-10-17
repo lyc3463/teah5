@@ -8,7 +8,7 @@ import * as YinghangkaService from '@/services/yinghangka';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import YinghangkaType from '@/ModelTypes/TypeCable';
+import YinghangkaType from '@/ModelTypes/TypeYinghangka';
 import { fixPathname } from '@/utils/common';
 let pl={
     page:1,
@@ -118,7 +118,12 @@ const YinghangkaModel: YinghangkaInterface = {
         setup({ dispatch, history }, done) {
             return history.listen(({ location, action }) => {
                 const pathname = fixPathname(location.pathname);
-
+                if (StaticInfo.userId > 0 && pathname === '/qianbao/yinghangka/') {
+                    dispatch({
+                        type: 'fetch',
+                        payload: location.state,
+                    });
+                }
 
 
             });

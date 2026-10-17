@@ -8,10 +8,9 @@ import * as AccountService from '@/services/account';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import AccountType from '@/ModelTypes/TypeCable';
+import AccountType from '@/ModelTypes/TypeAccount';
 import { fixPathname } from '@/utils/common';
 import * as ProjectService from "@/services/project";
-
 let pl={
     name:'',
     account_type:2
@@ -29,10 +28,10 @@ export interface AccountInterface {
     effects: {
         fetch: Effect;
         fetchOne: Effect;
+        projectOrAccount: Effect;
         add: Effect;
         edit: Effect;
         remove: Effect;
-        projectOrAccount: Effect;
     };
     reducers: {
         list: Reducer<AccountType[]>;
@@ -55,6 +54,7 @@ const AccountModels: AccountInterface = {
             } else {
                 message.error(res.ErrorCode + res.Data);
             }
+            console.log('es',res)
             return res
         },
         *projectOrAccount({ type, payload,callback }, { put, call, select }): any {
@@ -123,6 +123,42 @@ const AccountModels: AccountInterface = {
             return history.listen(({ location, action }) => {
                 const pathname = fixPathname(location.pathname);
 
+                if (StaticInfo.userId > 0 && pathname === '/financeManage/list/') {
+                    dispatch({
+                        type: 'fetch',
+                        payload: location.state,
+                    });
+                }
+                if (StaticInfo.userId > 0 && pathname === '/financeManage/accountList/') {
+                    dispatch({
+                        type: 'fetch',
+                        payload: location.state,
+                    });
+                }
+                if (StaticInfo.userId > 0 && pathname === '/enter/addFinancialData/') {
+                    dispatch({
+                        type: 'fetch',
+                        payload: location.state,
+                    });
+                }
+                if (StaticInfo.userId > 0 && pathname === '/enter/financialDataInfo/') {
+                    dispatch({
+                        type: 'fetch',
+                        payload: location.state,
+                    });
+                }
+                if (StaticInfo.userId > 0 && pathname === '/enter/editFinancialData/') {
+                    dispatch({
+                        type: 'fetch',
+                        payload: location.state,
+                    });
+                }
+                // if (StaticInfo.userId > 0 && pathname === '/billLog/yinghangka/') {
+                //     dispatch({
+                //         type: 'fetch',
+                //         payload: location.state,
+                //     });
+                // }
             });
         },
     },

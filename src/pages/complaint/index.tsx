@@ -57,7 +57,7 @@ const Complaint=(props:any)=>{
     const getList=()=>{
         props.dispatch({
             type:'Tousu/fetch',
-            payload:{page,name,phone,state,startDate,endDate,openID,pageSize}
+            payload:{page,name,phone,state,startDate,endDate,userId:0,pageSize}
         })
     };
     // const getfenye=()=>{

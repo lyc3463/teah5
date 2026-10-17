@@ -14,7 +14,7 @@ import { fixPathname } from '@/utils/common';
 let pl = {
     allNoticeName:'',
     beginTimeNotice:'2000-01-01',
-    endTimeNotice:'2030-01-01'
+    endTimeNotice:'2099-01-01'
 };
 export interface NoticeCountState {
     count: number;
@@ -53,6 +53,7 @@ const NoticeModel: NoticeInterface = {
             } else {
                 message.error(res.ErrorCode + res.Data);
             }
+            return res;
         },
         *fetchOne({ type, payload }, { put, call, select }): any {
             const list = yield select((state: any) => state.Notice.list);
@@ -106,6 +107,13 @@ const NoticeModel: NoticeInterface = {
         setup({ dispatch, history }, done) {
             return history.listen(({ location, action }) => {
                 const pathname = fixPathname(location.pathname);
+                if (StaticInfo.userId > 0 && pathname === '/propertyServerManage/notice/') {
+                    dispatch({
+                        type: 'fetch',
+                        payload: location.state,
+                    });
+                }
+
             });
         },
     },

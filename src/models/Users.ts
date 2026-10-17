@@ -8,7 +8,7 @@ import * as UsersService from '@/services/users';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import UsersType from '@/ModelTypes/TypeCable';
+import UsersType from '@/ModelTypes/TypeUsers';
 import { fixPathname } from '@/utils/common';
 let pl={
     page:1,
@@ -46,7 +46,6 @@ const UsersModel: SubjectInterface = {
     effects: {
         *fetch({ type, payload }, { put, call, select }): any {
             const res = yield call(UsersService.fetch, payload?payload:pl);
-            console.log('res',res)
             if (res.ErrorCode == 0) {
                 yield put({
                     type: 'list',
@@ -92,7 +91,18 @@ const UsersModel: SubjectInterface = {
             yield take('fetch/@@end');
             return result
         },
-
+        // *fenye({ payload }, { call, put,take }): any {
+        //     const res = yield call(UsersService.fenye, payload?payload:pl);
+        //
+        //     if (res.ErrorCode == 0) {
+        //         yield put({
+        //             type: 'count',
+        //             payload: { count: res.Data },
+        //         });
+        //     } else {
+        //         message.error(res.ErrorCode + res.Data);
+        //     }
+        // },
     },
     reducers: {
         list(state, action) {
@@ -119,18 +129,18 @@ const UsersModel: SubjectInterface = {
             return history.listen(({ location, action }) => {
                 const pathname = fixPathname(location.pathname);
 
-                // if (StaticInfo.userId > 0 && pathname === '/systemManage/userManage/') {
-                //     dispatch({
-                //         type: 'fetch',
-                //         payload: location.state,
-                //     });
-                // }
-                // if (StaticInfo.userId > 0 && pathname === '/propertyServerManage/reportLog/') {
-                //     dispatch({
-                //         type: 'fetch',
-                //         payload: location.state,
-                //     });
-                // }
+                if (StaticInfo.userId > 0 && pathname === '/systemManage/userManage/') {
+                    dispatch({
+                        type: 'fetch',
+                        payload: location.state,
+                    });
+                }
+                if (StaticInfo.userId > 0 && pathname === '/propertyServerManage/reportLog/') {
+                    dispatch({
+                        type: 'fetch',
+                        payload: location.state,
+                    });
+                }
                 // if (StaticInfo.userId > 0 && pathname === '/systemManage/userManage/') {
                 //     dispatch({
                 //         type: 'fenye',

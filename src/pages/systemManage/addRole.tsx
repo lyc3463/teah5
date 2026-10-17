@@ -16,7 +16,7 @@ const AddRole=(props)=>{
     const navigate=useNavigate();
     const [spinning,setspinning]=useState(false);
     const treeData = buildTree(qxTree);
-    const [selected, setSelected] = useState<string[]>(Array(441).fill('0'));
+    const [selected, setSelected] = useState<string[]>(Array(610).fill('0'));
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
     const getContainerStyle = () => {

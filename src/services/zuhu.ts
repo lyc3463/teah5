@@ -29,18 +29,21 @@ export function byfenye(vals:any) {
 export function jiebang(vals:any) {
     return getData(1423, [vals.page,vals.name,vals.phone]);
 }
-export function depoList(itemName:string,uid:string) {
-    return getData(1454, [itemName,uid]);
+export function depoList(page:number,name:string,phone:string,startDate:string,endDate:string,uid:string,type:number,pageSize:number) {
+    return getData(1454, [page,name,phone,startDate,endDate,uid,type,pageSize]);
 }
 export function editAbloue(vals:any) {
     return getData(1456, [vals.uid,vals.minimum_recharge]);
 }
-export function depoListFenye(itemName:string,uid:string) {
-    return getData(1455, [itemName,uid]);
+export function depoListFenye(name:string,phone:string,startDate:string,endDate:string,uid:string,type:number,pageSize:number) {
+    return getData(1455, [name,phone,startDate,endDate,uid,type,pageSize]);
 }
 export function newbyzhuhu(vals:any) {
     return getData(1496, [vals.uid,vals.reserved_amount,vals.warn_amount,vals.minimum_recharge,vals.remark,vals.tenantAmount,vals.oldreserved_amount,vals.is_deduction]);
 }
 export function newbyappuser(vals:any) {
     return getData(1423, [vals.uid,vals.tenant_phone]);
+}
+export function editzuhuAuth(id:number, auth:string) {
+    return getData(1425, [id, auth]);
 }

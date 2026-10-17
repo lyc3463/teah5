@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunk=self.webpackChunk||[]).push([[2350],{65569:function(o,e,_){_.r(e),_.d(e,{UmiHistory:function(){return m}});var s=_(17069),l=_.n(s),n=_(25298),t=_.n(n),m=l()(function u(){t()(this,u)})}}]);

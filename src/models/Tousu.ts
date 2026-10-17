@@ -7,8 +7,7 @@ import {
 import * as TousuService from '@/services/tousu';
 import { message } from 'antd';
 import _ from 'lodash';
-import { StaticInfo } from '@/StaticInfo';
-import TousuType from '@/ModelTypes/TypeCable';
+import TousuType from '@/ModelTypes/TypeTousu';
 import { fixPathname } from '@/utils/common';
 let pl={
     page:1,
@@ -17,7 +16,7 @@ let pl={
     state:0,
     startDate:'2000-01-01',
     endDate:'2099-01-01',
-    openID:0,
+    userId:0,
     pageSize:50
 };
 
@@ -36,6 +35,7 @@ export interface TousuInterface {
         add: Effect;
         edit: Effect;
         remove: Effect;
+        fenye: Effect;
         check: Effect;
     };
     reducers: {
@@ -99,7 +99,17 @@ const TousuModel: TousuInterface = {
             yield take('fetch/@@end');
             return result
         },
-
+        *fenye({ type, payload }, { put, call, select }): any {
+            const res = yield call(TousuService.fenye,payload?payload:pl);
+            if (res.ErrorCode == 0) {
+                yield put({
+                    type: 'count',
+                    payload: { count: res.Data },
+                });
+            } else {
+                message.error(res.ErrorCode + res.Data);
+            }
+        },
     },
     reducers: {
         list(state, action) {
@@ -125,7 +135,12 @@ const TousuModel: TousuInterface = {
         setup({ dispatch, history }, done) {
             return history.listen(({ location, action }) => {
                 const pathname = fixPathname(location.pathname);
-
+                // if (StaticInfo.userId > 0 && pathname === '/propertyServerManage/complaint/') {
+                //     dispatch({
+                //         type: 'fenye',
+                //         payload: location.state,
+                //     });
+                // }
 
             });
         },

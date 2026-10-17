@@ -8,7 +8,7 @@ import * as RechargeRateService from '@/services/rechargeRate';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import RechargeRateType from '@/ModelTypes/TypeCable';
+import RechargeRateType from '@/ModelTypes/TypeRechargeRate';
 import { fixPathname } from '@/utils/common';
 let pl={
     page:1,
@@ -48,6 +48,7 @@ const RechargeRateModel: QuestionnaireInterface = {
         *fetch({ type, payload }, { put, call, select }): any {
             const res = yield call(RechargeRateService.fetch, payload?payload:pl);
             if (res.ErrorCode == 0) {
+                console.log(res.Data)
                 yield put({
                     type: 'list',
                     payload: { list: res.Data.data },

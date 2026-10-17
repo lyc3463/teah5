@@ -116,12 +116,12 @@ const BillModel: BiaoqianInterface = {
             yield take('fetch/@@end');
             return result
         },
-        // *allCheck({ payload, callback }, { call, put, take }): any {
-        //     const result = yield call(BillService.allCheck, payload);
-        //     yield put({ type: 'fetch', payload: pl });
-        //     yield take('fetch/@@end');
-        //     return result
-        // },
+        *terminate({ payload, callback }, { call, put, take }): any {
+            const result = yield call(BillService.terminate, payload);
+            yield put({ type: 'fetch', payload: pl });
+            yield take('fetch/@@end');
+            return result
+        },
         *remove({ payload ,callback}, { call, put ,take}): any {
             const result = yield call(BillService.remove, payload);
             yield put({ type: 'fetch', payload: pl });
@@ -138,12 +138,6 @@ const BillModel: BiaoqianInterface = {
             } else {
                 message.error(res.ErrorCode + res.Data);
             }
-        },
-        *terminate({ payload, callback }, { call, put, take }): any {
-            const result = yield call(BillService.terminate, payload);
-            yield put({ type: 'fetch', payload: pl });
-            yield take('fetch/@@end');
-            return result
         },
     },
     reducers: {

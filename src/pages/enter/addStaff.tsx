@@ -1,46 +1,21 @@
-import {
-    Button,
-    Form,
-    Pagination,
-    Table,
-    Modal,
-    Select,
-    DatePicker,
-    Input,
-    InputNumber,
-    message,
-    Image,
-    Space, Tag, Spin
-} from "antd";
-import {useEffect, useState} from "react";
-import {connect,history,useNavigate} from "umi";
-import {
-    addNewData,
-    removeLastData,
-    checkEndTime,
-    splitDataByEndTimeAndRentPeriod,
-    calculateTotalRentalDays,
-    replaceEnglishCommasWithChinese,
-    calculateTimePeriods,
-    contractsDz,
-    getHouseNameById,
-    getNamesByIds
-} from "@/utils/OpenTool";
+import {Button, Form, Select, DatePicker, Input, InputNumber, message, Image, Space, Tag, Spin} from "antd";
+import {useCallback, useEffect, useState} from "react";
+import {connect,history} from "umi";
+import {addNewData, checkEndTime, splitDataByEndTimeAndRentPeriod, calculateTotalRentalDays, replaceEnglishCommasWithChinese, calculateTimePeriods, contractsDz, getHouseNameById, getNamesByIds, glmanageDz, getCurrentDate} from "@/utils/OpenTool";
 import TypeErrorCode from "@/ModelTypes/TypeErrorCode";
-import dayjs from "dayjs";
+import NoyasuoImgCmp from "@/components/NoyasuoImgCmp";
 import * as CheckCompanyService from '@/services/checkCompany';
 import * as contractTypeListServer from "@/services/contractTypeList";
 import * as UnitService from '@/services/unit';
-import ImageUploader from "@/components/ImageUploader";
-import {PlusOutlined, ReloadOutlined} from "@ant-design/icons";
-import NoyasuoImgCmp from "@/components/NoyasuoImgCmp";
-import {NavBar} from "antd-mobile";
-import DateRangePicker from "@/components/DateRangePickerProps";
-const tailLayout = {
-    wrapperCol: { offset: 3 },
-};
+import {PlusOutlined} from "@ant-design/icons";
+import './staff.less';
+import dayjs from "dayjs";
+import * as StaffService from '@/services/staff';
+
+// 缓存key
+const CACHE_KEY = "AddStaff_form_cache";
+
 const AddStaff=(props:any)=>{
-    const navigate=useNavigate();
     const [form] = Form.useForm();
     const [disb,setdisb]=useState(true);
     const [deposit,setdeposit]=useState(0);
@@ -48,12 +23,11 @@ const AddStaff=(props:any)=>{
     const [selectedPhone,setSelectedPhone]=useState('');
     // 合同编号房屋名称
     const [houseName,sethouseName]=useState('');
-    // 合同编号数字
-    const [numNo,setNumNo]=useState('');
+    // 管理费
+    const [manageFee,setManageFee]=useState(0);
     //合同编号单元名称
     const [unitNamess,setunitNamess]=useState('');
     // 递增
-    // const [formItems, setFormItems] = useState([{ key: 1, beginTime: null, endTime: null, rentBeginTime: null,rentEndTime:null,incremental:1}]);
     const [formItems, setFormItems] = useState([]);
     // 免租期
     const [mzformItems,setmzFormItems]=useState([]);
@@ -76,7 +50,7 @@ const AddStaff=(props:any)=>{
     // 结束时间
     const [endDate,setEndDate]=useState('');
     // 交付日
-    const [deliveryDate,setDeliveryDate]=useState('');
+    const [deliveryDate,setDeliveryDate]=useState(getCurrentDate());
     // 租户证件图片
     const [documentImages,setImgName]=useState([]);
     // 证件图片B64
@@ -104,7 +78,7 @@ const AddStaff=(props:any)=>{
     // 面积
     const [mianji,setmianji]=useState(0);
     // 签订日期
-    const [dayDate,setDayDate]=useState('');
+    const [dayDate,setDayDate]=useState(getCurrentDate());
     const [spinning,setspinning]=useState(false);
     // 房屋id
     const [house_id,sethouse_id]=useState(0);
@@ -112,105 +86,283 @@ const AddStaff=(props:any)=>{
     const [unitStutes,setunitStutes]=useState(true);
     // 租金
     const [zuMoney,setzuMoney]=useState(0);
-    const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+    // 管理费列表
+    const [manageFeeList,setManageFeeList]=useState([]);
 
-    // 删除递增表单项
-    const removeFormItemByKey = key => {
-        if (formItems.length<=1){
-            message.warning('不可删除最后一项');
-        }else {
-            setFormItems(prevItems => prevItems.filter(item => item.key !== key));
-            let newarr=removeLastData(formItems);
-            setFormItems(newarr);
+    // 读取缓存
+    const loadCache = useCallback(() => {
+        const str = sessionStorage.getItem(CACHE_KEY);
+        if (!str) return null;
+        try {
+            return JSON.parse(str);
+        } catch (e) {
+            sessionStorage.removeItem(CACHE_KEY);
+            return null;
         }
+    }, []);
+
+    // 保存state+表单字段到缓存
+    const saveCache = useCallback(() => {
+        const data = {
+            disb, deposit, unitstutes, selectedPhone, houseName, manageFee, unitNamess,
+            formItems, mzformItems, unitarrList, remark, wupinList,
+            startDate, endDate, deliveryDate,
+            documentImages, b64, unitImages, xyimgnames, xyimgb64, unitB64,
+            contractType, contractTypeid, mzq, summzqDay, minzujin, mianji, dayDate,
+            house_id, unitStutes, zuMoney, manageFeeList,
+            formValues: form.getFieldsValue()
+        };
+        try {
+            sessionStorage.setItem(CACHE_KEY, JSON.stringify(data));
+        } catch (e) {
+            // sessionStorage 容量超限时静默失败（图片base64可能过大）
+            console.warn('草稿保存失败：', e);
+        }
+    }, [
+        disb, deposit, unitstutes, selectedPhone, houseName, manageFee, unitNamess,
+        formItems, mzformItems, unitarrList, remark, wupinList,
+        startDate, endDate, deliveryDate,
+        documentImages, b64, unitImages, xyimgnames, xyimgb64, unitB64,
+        contractType, contractTypeid, mzq, summzqDay, minzujin, mianji, dayDate,
+        house_id, unitStutes, zuMoney, manageFeeList, form
+    ]);
+
+    // 清空缓存
+    const clearCache = () => sessionStorage.removeItem(CACHE_KEY);
+
+    // 清空草稿
+    const resetAllFormData = () => {
+        clearCache();
+        setdisb(true);
+        setdeposit(0);
+        setunitstutes(1);
+        setSelectedPhone('');
+        sethouseName('');
+        setManageFee(0);
+        setunitNamess('');
+        setFormItems([]);
+        setmzFormItems([]);
+        setUnitarrList([]);
+        setremark('');
+        setwupinList([{ key: 1,wupinName:null,wupininfo:null,wupinNuber:''}]);
+        setStartDate('');
+        setEndDate('');
+        setDeliveryDate(getCurrentDate());
+        setImgName([]);
+        setB64([]);
+        setunitImgName([]);
+        setxyimgnames([]);
+        setxyimgb64([]);
+        setuintB64([]);
+        setcontractType(0);
+        setcontractTypeid(0);
+        setMzq(0);
+        setsummzqDay(0);
+        setminzujin(0);
+        setmianji(0);
+        setDayDate(getCurrentDate());
+        sethouse_id(0);
+        setunitStutes(true);
+        setzuMoney(0);
+        setManageFeeList([]);
+        form.resetFields();
     };
+
     // 删除免租期
-    const removedzFormItemByKey = key => {
-        setmzFormItems(prevItems => prevItems.filter(item => item.key !== key));
+    const removedzFormItemByKey = (key:number) => {
+        setmzFormItems(prevItems => prevItems.filter((item:any) => item.id !== key));
     };
     // 删除物品表单项
-    const removeqingdan = key => {
-        setwupinList(prevItems => prevItems.filter(item => item.key !== key));
+    const removeqingdan = (key:number) => {
+        setwupinList(prevItems => prevItems.filter((item:any) => item.key !== key));
     };
-    const onFinish= (values)=>{
-        let identifier=`${houseName}-${numNo}-${unitNamess}`;
+    const onFinish = async (values:any, contractStatus = 1) => {
+        // 1. 通用参数
+        const identifier = `${houseName}-${Date.now()}-${unitNamess}`;
+        // 组装数据
+        const unit_id = unitarrList.map((item:any)=>{
+            return {id:item};
+        });
         setspinning(true);
-        let unit_id=unitarrList.join("|");
-        if (contractType==2){
-            let dayNoe=calculateTotalRentalDays(mzformItems);
-            let datearr=splitDataByEndTimeAndRentPeriod(formItems,endDate);
-            if (dayNoe!=mzq){
-                message.warning('免租期天数与填写天数不相等');
-                setspinning(false);
-            }if (zuMoney<minzujin){
-                message.warning(`租金不能低于${minzujin}元`);
-                setspinning(false);
-            } else {
-                let formItemsjson=JSON.stringify(datearr);
-                let wupinListjson=JSON.stringify(wupinList);
-                let mzqJson=JSON.stringify(mzformItems);
-                let imgs=xyimgnames.join('|');
-                let unitImage=unitImages.join('|');
-                let documentImage=documentImages.join('|');
-                let date={dzJson:formItemsjson,rentJson:mzqJson,goodsJson:wupinListjson};
-                let jsonDate=JSON.stringify(date);
-                props.dispatch({
-                    type:'Staff/addzs',
-                    payload:{...values,deposit,identifier,endDate,startDate,jsonDate,deliveryDate,documentImage,unitImage,imgs,contractTypeid,unit_id,remark,house_id,zuMoney}
-                }).then((res:TypeErrorCode)=>{
-                    if (res.ErrorCode==0){
-                        setspinning(false);
-                        message.success('添加成功');
-                        history.push('/enter/staff');
-                    }else {
-                        setspinning(false);
-                        message.error(res.Data);
-                    }
-                })
-            }
-        }else if (contractType==1){
-            props.dispatch({
-                type:'Staff/adddj',
-                payload:{...values,identifier,deposit,dayDate,contractTypeid,unit_id,house_id,zuMoney}
-            }).then((res:TypeErrorCode)=>{
-                if (res.ErrorCode==0){
+        try {
+            // 正式合同
+            if (contractType === 2) {
+                // 校验：免租期天数是否一致
+                const actualFreeDays = calculateTotalRentalDays(mzformItems);
+                if (actualFreeDays !== mzq) {
+                    message.warning('免租期天数与填写天数不相等');
                     setspinning(false);
+                    return;
+                }
+                // 校验：租金不低于最低租金
+                if (zuMoney < minzujin) {
+                    message.warning(`租金不能低于 ${minzujin} 元`);
+                    setspinning(false);
+                    return;
+                }
+                // 过滤后的新数组 → 只保留你要的字段
+                const filteredManageFeeList = manageFeeList.map(item => ({
+                    id: item.id,
+                    contractId: item.contractId,
+                    beginTime: item.beginTime,
+                    endTime: item.endTime,
+                    incremental: item.incremental
+                }));
+                // 组装数据
+                const datearr = splitDataByEndTimeAndRentPeriod(formItems, endDate);
+                const imgs = xyimgnames.join('|');
+                const unitImage = unitImages.join('|');
+                const documentImage = documentImages.join('|');
+                const dzJson = JSON.stringify(datearr);
+                const goodsJson = JSON.stringify(wupinList);
+                const rentJson = JSON.stringify(mzformItems);
+                const unitJson = JSON.stringify(unit_id);
+                const glfJson = JSON.stringify(filteredManageFeeList);
+                const jsonDate=JSON.stringify({dzJson,rentJson,goodsJson,unitJson,glfJson});
+                // 提交
+                const res = await props.dispatch({
+                    type: 'Staff/addzs',
+                    payload: {...values, deposit, manageFee, identifier, endDate, startDate, deliveryDate, documentImage, unitImage, imgs, contractTypeid, unit_id:'', remark, house_id, zuMoney, jsonDate, contractStatus},
+                });
+                // 结果判断
+                if (res.ErrorCode === 0) {
                     message.success('添加成功');
+                    // 添加成功后清空草稿缓存
+                    clearCache();
                     history.push('/enter/staff');
-                }else {
-                    setspinning(false);
+                } else {
                     message.error(res.Data);
                 }
-            })
-        }else {
-            message.warning('请选择合同类型进行填写数据');
+            }
+            // 定金合同
+            // fenye的后端方法修改，model的adddj执行后立刻执行fenye方法
+            // 因此不再执行model的adddj方法，改成直接执行adddj
+            else if (contractType === 1) {
+                // const res = await props.dispatch({
+                //     type: 'Staff/adddj',
+                //     payload: {
+                //         ...values,
+                //         identifier,
+                //         deposit,
+                //         dayDate,
+                //         contractTypeid,
+                //         unit_id,
+                //         house_id,
+                //         zuMoney,
+                //         contractStatus,
+                //     },
+                // });
+                // if (res.ErrorCode === 0) {
+                //     message.success('添加成功');
+                //     // 添加成功后清空草稿缓存
+                //     clearCache();
+                //     history.push('/enter/staff');
+                // } else {
+                //     message.error(res.Data);
+                // }
+                StaffService.adddj({
+                    ...values,
+                    identifier,
+                    deposit,
+                    dayDate,
+                    contractTypeid,
+                    unit_id,
+                    house_id,
+                    zuMoney,
+                    contractStatus,
+                }).then((res:TypeErrorCode)=>{
+                    if (res.ErrorCode === 0) {
+                        message.success('添加成功');
+                        // 添加成功后清空草稿缓存
+                        clearCache();
+                        history.push('/enter/staff');
+                    } else {
+                        message.error(res.Data);
+                    }
+                });
+            }
+            else {
+                message.warning('请选择合同类型进行填写数据');
+            }
+        } catch (err) {
+            message.error('操作异常，请重试');
+            console.error(err);
+        } finally {
             setspinning(false);
         }
     };
     useEffect(() => {
+        // 加载缓存：回填所有state与表单字段
+        const cache = loadCache();
+        if (cache) {
+            setdisb(cache.disb ?? true);
+            setdeposit(cache.deposit ?? 0);
+            setunitstutes(cache.unitstutes ?? 1);
+            setSelectedPhone(cache.selectedPhone ?? '');
+            sethouseName(cache.houseName ?? '');
+            setManageFee(cache.manageFee ?? 0);
+            setunitNamess(cache.unitNamess ?? '');
+            setFormItems(cache.formItems ?? []);
+            setmzFormItems(cache.mzformItems ?? []);
+            setUnitarrList(cache.unitarrList ?? []);
+            setremark(cache.remark ?? '');
+            if (cache.wupinList) setwupinList(cache.wupinList);
+            setStartDate(cache.startDate ?? '');
+            setEndDate(cache.endDate ?? '');
+            setDeliveryDate(cache.deliveryDate ?? getCurrentDate());
+            setImgName(cache.documentImages ?? []);
+            setB64(cache.b64 ?? []);
+            setunitImgName(cache.unitImages ?? []);
+            setxyimgnames(cache.xyimgnames ?? []);
+            setxyimgb64(cache.xyimgb64 ?? []);
+            setuintB64(cache.unitB64 ?? []);
+            setcontractType(cache.contractType ?? 0);
+            setcontractTypeid(cache.contractTypeid ?? 0);
+            setMzq(cache.mzq ?? 0);
+            setsummzqDay(cache.summzqDay ?? 0);
+            setminzujin(cache.minzujin ?? 0);
+            setmianji(cache.mianji ?? 0);
+            setDayDate(cache.dayDate ?? getCurrentDate());
+            sethouse_id(cache.house_id ?? 0);
+            setunitStutes(cache.unitStutes ?? true);
+            setzuMoney(cache.zuMoney ?? 0);
+            setManageFeeList(cache.manageFeeList ?? []);
+            if (cache.formValues) {
+                form.setFieldsValue(cache.formValues);
+            }
+        }
         getCheckCompanyList();
         getCtyList();
         getHouseList();
     }, []);
-    const changeData=(start,end)=>{
-        setStartDate(start);
-        setEndDate(end);
-        let dataArr=calculateTimePeriods(start,end,zuMoney);
+    // 任意state变动自动存缓存
+    useEffect(() => {
+        saveCache();
+    }, [saveCache]);
+    // 表单字段变动也立即存
+    const handleFormChange = () => {
+        saveCache();
+    };
+    const changeData=(_:any,item:any)=>{
+        setStartDate(item[0]);
+        setEndDate(item[1]);
+        let dataArr=calculateTimePeriods(item[0],item[1],zuMoney);
         setFormItems(dataArr);
     };
-    // 更新起租日
-    const updateqizuDate = (key, updates) => {
-        setFormItems(prevItems => prevItems.map(item => item.key === key ? { ...item, ...updates } : item));
+    // 新增管理费
+    const addManageFeeFromItem=()=>{
+        const newKey = manageFeeList.length ? Math.max(...manageFeeList.map((item:any) => item.id)) + 1 : 1;
+        setManageFeeList([...manageFeeList, { id: newKey, contractId:0,beginTime: null,endTime:null,incremental:0}]);
     };
     // 更新免租期
-    const updatemz = (key, updates) => {
-        setmzFormItems(prevItems => prevItems.map(item => item.key === key ? { ...item, ...updates } : item));
+    const updatemz = (key:number, updates:any) => {
+        setmzFormItems(prevItems => prevItems.map((item:any) => item.id === key ? { ...item, ...updates } : item));
     };
-    // 更新递增
-    const updatedz = (key, updates) => {
+     // 更新递增
+    const updatedz = (key:number, updates:any) => {
         setFormItems(prevItems => {
             // 1. 更新对应的 item
-            const updatedItems = prevItems.map(item =>
+            const updatedItems = prevItems.map((item:any) =>
                 item.id === key ? { ...item, ...updates } : item
             );
             // 2. 计算 contractsDz
@@ -222,13 +374,14 @@ const AddStaff=(props:any)=>{
     // 监听免租期天数
     useEffect(() => {
         setsummzqDay(calculateTotalRentalDays(mzformItems));
+        console.log('mzformItems',mzformItems);
     }, [mzformItems]);
     // 添加递增表单项
     const addFormItem = () => {
         if (startDate&&endDate){
             let isAdd=checkEndTime(formItems,endDate);
             if (isAdd){
-                const newKey = formItems.length ? Math.max(...formItems.map(item => item.key)) + 1 : 1;
+                const newKey = formItems.length ? Math.max(...formItems.map((item:any) => item.key)) + 1 : 1;
                 let FormItems=[...formItems, { key: newKey, beginTime: null, endTime: null, incremental:0}]
                 newArr(FormItems);
             }else {
@@ -240,10 +393,10 @@ const AddStaff=(props:any)=>{
     };
     // 新增免租期
     const addDzFromItem=()=>{
-        const newKey = mzformItems.length ? Math.max(...mzformItems.map(item => item.key)) + 1 : 1;
-        setmzFormItems([...mzformItems, { key: newKey,  rentBeginTime: null,rentEndTime:null}]);
+        const newKey = mzformItems.length ? Math.max(...mzformItems.map((item:any) => item.id)) + 1 : 1;
+        setmzFormItems([...mzformItems, { id: newKey,  rentBeginTime: null,rentEndTime:null}]);
     };
-    const newArr=(FormItems)=>{
+    const newArr=(FormItems:any[])=>{
         let arr=addNewData(FormItems,endDate);
         if (arr.bllo){
             setFormItems(arr.updatedData);
@@ -253,14 +406,13 @@ const AddStaff=(props:any)=>{
     };
     // 添加物品表单项
     const addwuping = () => {
-        const newKey = wupinList.length ? Math.max(...wupinList.map(item => item.key)) + 1 : 1;
+        const newKey = wupinList.length ? Math.max(...wupinList.map((item:any) => item.key)) + 1 : 1;
         setwupinList([...wupinList, { key: newKey,wupinName: null,wupininfo: null,wupinNuber: ''}]);
     };
     // 获取单元列表
     const getUnitList=()=>{
         UnitService.stutesUnit({house_id:house_id}).then((res:TypeErrorCode)=>{
             if (res.ErrorCode==0){
-                console.log('单元列表',res);
                 setUnitList(res.Data);
             }else {
                 message.error(res.Data)
@@ -280,7 +432,7 @@ const AddStaff=(props:any)=>{
         })
     };
     // 监听勾选的单元
-    const changeunit=(e)=>{
+    const changeunit=(e:any)=>{
         CheckCompanyService.companyorUnitList(e.join("|")).then((res:TypeErrorCode)=>{
             if (res.ErrorCode==0){
                 setUnitarrList(e);
@@ -291,9 +443,9 @@ const AddStaff=(props:any)=>{
     };
     // 筛选过滤掉的租金跟面积
     const filterzuArea=(item:any)=>{
-        const filteredHouses = unitList.filter(house => item.includes(house.id));
-        const totalPrice = filteredHouses.reduce((accumulator, currentHouse) => accumulator + currentHouse.price, 0);
-        const totalrentable_area = filteredHouses.reduce((accumulator, currentHouse) => accumulator + currentHouse.rentable_area, 0);
+        const filteredHouses = unitList.filter((house:any) => item.includes(house.id));
+        const totalPrice = filteredHouses.reduce((accumulator:number, currentHouse:any) => accumulator + currentHouse.price, 0);
+        const totalrentable_area = filteredHouses.reduce((accumulator:number, currentHouse:any) => accumulator + currentHouse.rentable_area, 0);
         setminzujin(totalPrice);
         setmianji(totalrentable_area);
     };
@@ -301,8 +453,7 @@ const AddStaff=(props:any)=>{
     const getCheckCompanyList=()=>{
         CheckCompanyService.companyList({name:''}).then((res:TypeErrorCode)=>{
             if (res.ErrorCode==0){
-                const filteredArray = res.Data.map(item => item.contractStatus !== 2 ? item : null).filter(item => item !== null);
-                setKehuList(filteredArray);
+                setKehuList(res.Data);
             }else {
                 message.error(res.Data)
             }
@@ -315,6 +466,7 @@ const AddStaff=(props:any)=>{
     // 租户证件图片B64
     const onB64=(e:string)=>{
         // setB64(e);
+        console.log('图片',e)
         setB64((prevItems=>[...prevItems,e]))
     };
     // 删除租户证件图片
@@ -343,20 +495,24 @@ const AddStaff=(props:any)=>{
         newB64.splice(index, 1);
         setuintB64(newB64);
     };
+    // 更新管理费
+    const upManageFee = (key:number, updates:any) => {
+        setManageFeeList(prevItems => prevItems.map((item:any) => item.id === key ? { ...item, ...updates } : item));
+    };
     const changedeliveryDate=(_:any,item:any)=>{
-        setDeliveryDate(item);
+      setDeliveryDate(item);
     };
     // 修改物品清单的数量
-    const updateMiber=(key, updates)=>{
-        setwupinList(prevItems => prevItems.map(item => item.key === key ? { ...item, ...updates } : item));
+    const updateMiber=(key:number, updates:any)=>{
+        setwupinList(prevItems => prevItems.map((item:any) => item.key === key ? { ...item, ...updates } : item));
     };
     // 修改物品清单的标准
-    const updatebiaozhun=(key, updates)=>{
-        setwupinList(prevItems => prevItems.map(item => item.key === key ? { ...item, ...updates } : item));
+    const updatebiaozhun=(key:number, updates:any)=>{
+        setwupinList(prevItems => prevItems.map((item:any) => item.key === key ? { ...item, ...updates } : item));
     };
     // 修改物品清单的名称
-    const updateName=(key, updates)=>{
-        setwupinList(prevItems => prevItems.map(item => item.key === key ? { ...item, ...updates } : item));
+    const updateName=(key:number, updates:any)=>{
+        setwupinList(prevItems => prevItems.map((item:any) => item.key === key ? { ...item, ...updates } : item));
     };
     // 补充协议图片名字
     const imgNames=(e:string)=>{
@@ -375,10 +531,10 @@ const AddStaff=(props:any)=>{
         newB64.splice(index, 1);
         setxyimgb64(newB64);
     };
-    function findById(array, id) {
-        return array.find(item => item.id === id);
+    function findById(array:any[], id:number) {
+        return array.find((item:any) => item.id === id);
     };
-    const changecontractType=(e)=>{
+    const changecontractType=(e:number)=>{
         let result=findById(ctyList,e);
         setcontractType(result.templateType);
         setcontractTypeid(result.id);
@@ -396,15 +552,14 @@ const AddStaff=(props:any)=>{
             }
         })
     };
-
     // 限制开始时间
-    const disabledDate = (current) => {
+    const disabledDate = (current:any) => {
         return (
             current && (current.isBefore(startDate, "day") || current.isAfter(endDate, "day"))
         );
     };
     // 禁用日期函数
-    const disabledDate1 = (current) => {
+    const disabledDate1 = (current:any) => {
         // 禁用在起始日期之前或在结束日期之后的日期
         return current && (current < dayjs(startDate) || current > dayjs(endDate));
     };
@@ -412,12 +567,12 @@ const AddStaff=(props:any)=>{
     const onLikai=()=>{
         history.push('/enter/staff/');
     };
-    const changeremark=(e)=>{
+    const changeremark=(e:any)=>{
         let a=replaceEnglishCommasWithChinese(e.target.value);
         setremark(a);
     };
     // 监听房屋
-    const changeHouse=(e)=>{
+    const changeHouse=(e:number)=>{
         let retunName=getHouseNameById(houseList,e);
         sethouseName(retunName);
         sethouse_id(e);
@@ -428,13 +583,13 @@ const AddStaff=(props:any)=>{
     useEffect(() => {
         getUnitList();
     }, [house_id]);
-    const changeMoney=(e)=>{
-        setzuMoney(e);
-        setFormItems(contractsDz(e,formItems));
+    const changeMoney=(e:number)=>{
+      setzuMoney(e);
+      setFormItems(contractsDz(e,formItems));
     };
-    const changeKehu=(e)=>{
+    const changeKehu=(e:number)=>{
         getcokuInfo(e);
-        const selectedCustomer = kehuList.find(item => item.id === e);
+        const selectedCustomer = kehuList.find((item:any) => item.id === e);
         setSelectedPhone(selectedCustomer.custom_phone);
     };
     const getcokuInfo=(e:number)=>{
@@ -449,7 +604,6 @@ const AddStaff=(props:any)=>{
                     setUnitarrList(res.Data.unitIds.split("|").map(item => parseInt(item, 10)));
                     let retunName=getHouseNameById(houseList,res.Data.houseId);
                     sethouseName(retunName);
-
                 }else {
                     setdisb(false);
                     setzuMoney(0);
@@ -463,398 +617,427 @@ const AddStaff=(props:any)=>{
             }
         })
     };
+    // 更新管理费递增
+    const managedz = (key:number, updates:any) => {
+        setManageFeeList(prevItems => {
+            // 1. 更新对应的 item
+            const updatedItems = prevItems.map((item:any) =>
+                item.id === key ? { ...item, ...updates } : item
+            );
+            // 2. 计算 manageDz
+            const newItems = glmanageDz(manageFee, updatedItems);
+            // 3. 返回最终结果
+            return newItems;
+        });
+    };
+    // 删除管理费
+    const removedManageFeeFormItemByKey = (key:number) => {
+        setManageFeeList(prevItems => prevItems.filter((item:any) => item.id !== key));
+    };
     useEffect(() => {
         filterzuArea(unitarrList);
         setunitNamess(getNamesByIds(unitList,unitarrList))
     }, [unitList,unitarrList]);
-    const getContainerStyle = () => {
-        return {
-            padding: windowWidth <= 480 ? '12px' : '16px',
-            maxWidth: windowWidth <= 480 ? '100%' : '600px',
-            margin: '0 auto',
-            height: '90vh',
-            overflowY: 'auto',
-            scrollbarWidth: 'thin',
-        };
-    };
-    const getNavBarStyle = () => {
-        return {
-            '--height': windowWidth <= 480 ? '40px' : '48px',
-            '--border-bottom': 'none',
-            '--background-color': '#fff',
-            '--font-size': windowWidth <= 480 ? '16px' : '18px',
-            padding: windowWidth <= 480 ? '12px' : '16px',
-            maxWidth: windowWidth <= 480 ? '100%' : '600px',
-            margin: '0 auto',
-        };
-    };
-    useEffect(() => {
-        const handleResize = () => {
-            setWindowWidth(window.innerWidth);
-        };
-        window.addEventListener('resize', handleResize);
-        return () => {
-            window.removeEventListener('resize', handleResize);
-        };
-    }, []);
     return(
         <Spin spinning={spinning}>
-            <NavBar
-                onBack={() => navigate(-1)}
-                style={getNavBarStyle()}
-            >
-                录入合同
-            </NavBar>
-            <div style={getContainerStyle()}>
+            <div className="edit-staff-form-container">
                 <Form
-                    labelCol={{ span: 4 }}
-                    wrapperCol={{ span: 14 }}
                     form={form}
-                    layout="horizontal"
-                    size={'large'}
-                    initialValues={{remark: '',manageFeeRent:0,prepayment:0,decorationCost:0,customCard:'',depositFee:0,dispatchName:'',dispatchCard:'',businessEntity:'',businessScope:'',legalPerson:''}}
+                    initialValues={{
+                        remark: '', prepayment: 0, decorationCost: 0, customCard: '',
+                        depositFee: 0, dispatchName: '', dispatchCard: '', businessEntity: '',
+                        businessScope: '', legalPerson: '',manageFeeRent:0
+                    }}
                     onFinish={onFinish}
+                    onValuesChange={handleFormChange}
+                    layout="horizontal"
+                    size="large"
+                    className="edit-staff-form"
                 >
-                    <Form.Item >
-                        <Form.Item name='contractType'>
-                            <Select onChange={changecontractType} placeholder='合同类型'>
-                                {
-                                    ctyList.map((item:any,index:number)=>{
-                                        return(
+                    {/* 基本信息 */}
+                    <div className="form-section">
+                        <div className="section-title">基本信息</div>
+                        <div className="form-row">
+                            <div className="form-item-group">
+                                <Form.Item label="合同类型" name="contractType">
+                                    <Select style={{ width: 180 }} onChange={changecontractType}>
+                                        {ctyList.map((item: any, index: number) => (
                                             <Select.Option value={item.id} key={index}>
-                                                {item.templateType==1?'定金合同':'正式合同'}
+                                                {item.templateType == 1 ? '定金合同' : '正式合同'}
                                             </Select.Option>
-                                        )
-                                    })
-                                }
-                            </Select>
-                        </Form.Item>
-                        <Form.Item>
-                            <Input addonBefore="合同编号:" value={numNo} onChange={(e)=>setNumNo(e.target.value)}/>
-                        </Form.Item>
-                        <Form.Item name='clientId'  rules={[{required: true, message: ''}]}>
-                            <Select
-                                notFoundContent={false}
-                                showSearch
-                                placeholder='客户'
-                                onChange={changeKehu}
-                                optionFilterProp="children"
-                                filterOption={(input, option) => {
-                                    // 假设每个 option 都有一个与数据项对应的 value 属性
-                                    const item = kehuList.find(unit => unit.id == option.value); // 您可能需要优化这个查找过程
-                                    return item?.custom_name?.toLowerCase().includes(input.toLowerCase());
-                                }}
-                            >
-                                {kehuList.map((item:any,index:any)=>{
-                                    return(
-                                        <Select.Option value={item.id} key={index}>
-                                            {item.custom_name}
-                                        </Select.Option>
-                                    )
-                                })}
-                            </Select>
-                        </Form.Item>
-                        <Form.Item >
-                            <Input addonBefore="手机号:" value={selectedPhone} disabled/>
-                        </Form.Item>
-                        {
-                            contractType==1?<Form.Item>
-                                签订日期：<DatePicker onChange={changeDayDate}/>
-                            </Form.Item>:''
-                        }
-                        <Form.Item>
-                            <Select placeholder='房屋'
-                                    value={house_id}
-                                    disabled={disb}
-                                    onChange={changeHouse}
-                            >
-                                <Select.Option value={0} key={-1}>
-                                    请选择房屋
-                                </Select.Option>
-                                {houseList.map((item:any,index:any)=>{
-                                    return(
-                                        <Select.Option value={item.id} key={index}>
-                                            {item.house_name}
-                                        </Select.Option>
-                                    )
-                                })}
-                            </Select>
-                        </Form.Item>
-                        {
-                            contractType==2?<Form.Item name='customCard' rules={[{required: true, message: ''}]}>
-                                <Input addonBefore="身份证:"/>
-                            </Form.Item>:''
-                        }
-                    </Form.Item>
-                    <Form.Item>
-                        <Select placeholder='请选择单元,注:选择第一个单元决定合同用途'
-                                mode="multiple"
-                                value={unitarrList}
-                                onChange={changeunit}
-                                disabled={unitStutes}
-                                showSearch
-                                optionFilterProp="children"
-                                filterOption={(input, option) => {
-                                    const item = unitList.find(unit => unit.id == option.value); // 您可能需要优化这个查找过程
-                                    return item?.unit_name?.toLowerCase().includes(input.toLowerCase());
-                                }}
-                        >
-                            {unitList.map((item:any,index:any)=>{
-                                let statusText;
-                                if (item.status === 1) {
-                                    statusText = <Tag color="green">未租</Tag>; // 假设使用Ant Design的Tag组件来显示状态
-                                } else if (item.status === 2) {
-                                    statusText = <Tag color="blue">已租</Tag>;
-                                } else if (item.status === 3) {
-                                    statusText = <Tag color="red">退租</Tag>;
-                                } else {
-                                    // 处理未知状态，或显示原始文本
-                                    statusText = <span>未知状态</span>;
-                                }
-                                return(
-                                    <Select.Option value={item.id} key={index}>
-                                        {item.unit_name}-{statusText}
-                                    </Select.Option>
-                                )
-                            })}
-                        </Select>
-                    </Form.Item>
-                    <Form.Item>
-                        <InputNumber addonBefore="租金/月(元):" value={zuMoney} onChange={changeMoney} disabled={disb}/>
-                        {disb?'':<div style={{fontSize:"12px",color:'#555'}}>租金不能低于{minzujin}元</div>}
-                    </Form.Item>
-                    <Form.Item>
-                        <InputNumber addonBefore="租金押金(元):" value={deposit} onChange={(e)=>setdeposit(e)} disabled={disb}/>
-                    </Form.Item>
-                    {
-                        contractType==2?<>
-                            <Form.Item name='manageFee'  rules={[{required: true, message: ''}]}>
-                                <InputNumber addonBefore="管理费(元):"/>
-                            </Form.Item>
-                            <Form.Item  name='depositFee' rules={[{required: true, message: ''}]}>
-                                <InputNumber min={0} addonBefore="管理费押金(元):"/>
-                            </Form.Item>
-                            <Form.Item name='manageFeeRent' rules={[{required: true, message: ''}]}>
-                                <InputNumber addonBefore="管理费递增%:" min={0}/>
-                            </Form.Item>
-                        </>:''
-                    }
-                    {
-                        contractType==2?(
-                            <>
-                                <Form.Item  name='businessEntity'>
-                                    <Input addonBefore="经营主体:"/>
+                                        ))}
+                                    </Select>
                                 </Form.Item>
-                                <Form.Item name='businessScope'>
-                                    <Input addonBefore="经营范围:"/>
+                            </div>
+                            <div className="form-item-group">
+                                <Form.Item label="合同编号">
+                                    <Input placeholder={'随机生成'}  disabled/>
                                 </Form.Item>
-                                <Form.Item name='legalPerson'>
-                                    <Input addonBefore="法定代表人:"/>
+                            </div>
+                            <div className="form-item-group">
+                                <Form.Item label="房屋">
+                                    <Select
+                                        placeholder="选择房屋"
+                                        value={house_id}
+                                        disabled={disb}
+                                        onChange={changeHouse}
+                                        style={{ width: 220 }}
+                                    >
+                                        <Select.Option value={0}>请选择</Select.Option>
+                                        {houseList.map((item, index) => (
+                                            <Select.Option value={item.id} key={item.id}>{item.house_name}</Select.Option>
+                                        ))}
+                                    </Select>
                                 </Form.Item>
-                                <Form.Item>
-                                    <InputNumber addonBefore="面积:" value={mianji} disabled/>
+                            </div>
+                            {contractType == 1 && (
+                                <div className="form-item-group">
+                                    <Form.Item label="签订日期">
+                                        <DatePicker onChange={changeDayDate} value={dayjs(dayDate)} style={{ width: 180 }} />
+                                    </Form.Item>
+                                </div>
+                            )}
+                            {contractType == 2 && (
+                                <div className="form-item-group">
+                                    <Form.Item label="租户身份证" name="customCard" rules={[{ required: true }]}>
+                                        <Input style={{ width: 220 }} />
+                                    </Form.Item>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    {/* 客户 & 单元 */}
+                    <div className="form-section">
+                        <div className="section-title">客户 & 单元</div>
+                        <div className="form-row">
+                            <div className="form-item-group">
+                                <Form.Item label="客户" name="clientId" rules={[{ required: true }]}>
+                                    <Select
+                                        showSearch
+                                        onChange={changeKehu}
+                                        style={{ width: 240 }}
+                                        filterOption={(input, option) => {
+                                            const item = kehuList.find(unit => unit.id == option?.value);
+                                            return item?.custom_name?.toLowerCase().includes(input.toLowerCase());
+                                        }}
+                                    >
+                                        {kehuList.map((item, index) => (
+                                            <Select.Option value={item.id} key={item.id}>
+                                                {item.custom_name} - {item.custom_phone}
+                                            </Select.Option>
+                                        ))}
+                                    </Select>
                                 </Form.Item>
-                                <Form.Item name='prepayment' rules={[{required: true, message:'请填写预付费'}]}>
-                                    <InputNumber min={0} addonBefore="预付费:"/>
+                            </div>
+                            <div className="form-item-group">
+                                <Form.Item label="单元">
+                                    <Select
+                                        mode="multiple"
+                                        placeholder="选择单元"
+                                        disabled={unitStutes}
+                                        value={unitarrList}
+                                        onChange={changeunit}
+                                        showSearch
+                                        style={{ width: 500 }}
+                                        filterOption={(input, option) => {
+                                            const item = unitList.find(unit => unit.id == option?.value);
+                                            return item?.unit_name?.toLowerCase().includes(input.toLowerCase());
+                                        }}
+                                    >
+                                        {unitList.map((item: any) => {
+                                            const color = item.status === 1 ? 'green' : item.status === 2 ? 'blue' : 'red';
+                                            const text = item.status === 1 ? '未租' : item.status === 2 ? '已租' : '退租';
+                                            return (
+                                                <Select.Option value={item.id} key={item.id}>
+                                                    {item.unit_name} <Tag color={color}>{text}</Tag>
+                                                </Select.Option>
+                                            );
+                                        })}
+                                    </Select>
                                 </Form.Item>
-                                <Form.Item name='dispatchName' >
-                                    <Input addonBefore="派遣人:"/>
+                            </div>
+                            <div className="form-item-group">
+                                <Form.Item label="面积">
+                                    <InputNumber value={mianji} disabled style={{ width: 140 }} />
                                 </Form.Item>
-                                <Form.Item name='dispatchCard'>
-                                    <Input addonBefore="派遣人身份证:"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 费用信息 */}
+                    <div className="form-section">
+                        <div className="section-title">费用信息</div>
+                        <div className="form-row">
+                            <div className="form-item-group">
+                                <Form.Item label="租金/月(元)">
+                                    <div style={{ width: 180 }}>
+                                        <InputNumber value={zuMoney} onChange={changeMoney} disabled={disb}/>
+                                        {disb?'':<div style={{fontSize:"12px",color:'#555'}}>租金不能低于{minzujin}元</div>}
+                                    </div>
                                 </Form.Item>
-                                <Form.Item>
-                                    交付日：<DatePicker onChange={changedeliveryDate}/>
+                            </div>
+
+                            <div className="form-item-group">
+                                <Form.Item label="押金(元)">
+                                    <InputNumber value={deposit} onChange={(e) => setdeposit(e)} style={{ width: 180 }} />
                                 </Form.Item>
-                                <Form.Item name='decorationCost' >
-                                    <InputNumber addonBefore="装修费用(元):"/>
-                                </Form.Item>
-                                <Form.Item>
-                                   <Space>
-                                       起租日<DateRangePicker onDateSelected={changeData}/>
-                                   </Space>
-                                </Form.Item>
-                                {formItems.map((item:any,index:number) => (
-                                    <div key={item.id}>
-                                        <Form.Item>
-                                            <DatePicker.RangePicker
-                                                disabled={[true, true]}
-                                                disabledDate={disabledDate}
-                                                value={item.beginTime&&item.endTime?[dayjs(item.beginTime), dayjs(item.endTime)]:''}
-                                                onChange={(dates,data) => updateqizuDate(item.id,{beginTime: data[0], endTime: data[1]})}
-                                            />
-                                        </Form.Item>
-                                        <Form.Item>
-                                            <InputNumber
-                                                addonBefore="递增%:"
-                                                value={item.incremental}
-                                                onChange={(value) => updatedz(item.id,{incremental:value})}
-                                            />
-                                            <span style={{fontSize:"12px",color:"#555"}}>租金:{item.zuMoney}元</span>
+                            </div>
+
+                            {contractType == 2 && (
+                                <>
+                                    <div className="form-item-group">
+                                        <Form.Item label="管理费(元)">
+                                            <InputNumber style={{ width: 180 }} value={manageFee} onChange={(e) => setManageFee(e)} min={0}/>
                                         </Form.Item>
                                     </div>
+                                    <div className="form-item-group">
+                                        <Form.Item label="管理费押金" name="depositFee">
+                                            <InputNumber style={{ width: 180 }} />
+                                        </Form.Item>
+                                    </div>
+                                    <div className="form-item-group">
+                                        <Form.Item label="管理费递增%" name="manageFeeRent">
+                                            <InputNumber min={0} style={{ width: 180 }} />
+                                        </Form.Item>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                    {contractType == 2 && (
+                        <>
+                            {/* 经营信息 */}
+                            <div className="form-section">
+                                <div className="section-title">经营信息</div>
+                                <div className="form-row">
+                                    <div className="form-item-group">
+                                        <Form.Item label="经营主体" name="businessEntity">
+                                            <Input style={{ width: 180 }} />
+                                        </Form.Item>
+                                    </div>
+                                    <div className="form-item-group">
+                                        <Form.Item label="经营范围" name="businessScope">
+                                            <Input style={{ width: 180 }} />
+                                        </Form.Item>
+                                    </div>
+                                    <div className="form-item-group">
+                                        <Form.Item label="法定代表人" name="legalPerson">
+                                            <Input style={{ width: 160 }} />
+                                        </Form.Item>
+                                    </div>
+                                    <div className="form-item-group">
+                                        <Form.Item label="预付费" name="prepayment" rules={[{ required: true }]}>
+                                            <InputNumber min={0} style={{ width: 160 }} />
+                                        </Form.Item>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 交付与派遣 */}
+                            <div className="form-section">
+                                <div className="section-title">交付与派遣</div>
+                                <div className="form-row">
+                                    <div className="form-item-group">
+                                        <Form.Item label="派遣人" name="dispatchName">
+                                            <Input style={{ width: 160 }} />
+                                        </Form.Item>
+                                    </div>
+                                    <div className="form-item-group">
+                                        <Form.Item label="派遣人身份证" name="dispatchCard">
+                                            <Input style={{ width: 220 }} />
+                                        </Form.Item>
+                                    </div>
+                                    <div className="form-item-group">
+                                        <Form.Item label="交付日">
+                                            <DatePicker onChange={changedeliveryDate} value={dayjs(deliveryDate)} style={{ width: 180 }} />
+                                        </Form.Item>
+                                    </div>
+                                    <div className="form-item-group">
+                                        <Form.Item label="装修费用" name="decorationCost">
+                                            <InputNumber style={{ width: 180 }} />
+                                        </Form.Item>
+                                    </div>
+                                </div>
+                            </div>
+                            {/* 租赁时间 */}
+                            <div className="form-section">
+                                <div className="section-title">租赁时间</div>
+                                {/* ========== 起租日期 靠左 ========== */}
+                                <div className="form-row" style={{ justifyContent: 'flex-start' }}>
+                                    <div className="form-item-group">
+                                        <Form.Item label="起租日期">
+                                            <DatePicker.RangePicker onChange={changeData} size="small" />
+                                        </Form.Item>
+                                    </div>
+                                </div>
+                                {/*租赁时段*/}
+                                {formItems.map((item: any, index: any) => (
+                                    <div key={item.id} className="form-row">
+                                        <div className="form-item-group">
+                                            <Form.Item label="租赁时段">
+                                                <DatePicker.RangePicker
+                                                    disabled
+                                                    value={item.beginTime && item.endTime ? [dayjs(item.beginTime), dayjs(item.endTime)] : undefined}
+                                                />
+                                            </Form.Item>
+                                        </div>
+                                        <div className="form-item-group">
+                                            <Form.Item label="递增%">
+                                                <InputNumber min={0}  value={item.incremental} onChange={(value) => updatedz(item.id,{incremental:value})} style={{ width: 120 }} />
+                                            </Form.Item>
+                                        </div>
+                                        <span style={{ fontSize: 12, color: '#666', lineHeight: '32px' }}>递增后租金：{item.zuMoney} 元</span>
+                                    </div>
                                 ))}
-                                <Form.Item>
-                                    <Space>
-                                        <span style={{fontSize:"12px",color:'#555'}}>已选择{summzqDay}天免租期</span>
-                                        <InputNumber min={0} onChange={(e)=>setMzq(e)} value={mzq}/>
-                                        <Button type="primary" onClick={addDzFromItem} >
-                                            <PlusOutlined />
-                                        </Button>
-                                    </Space>
-                                </Form.Item>
-                                <Form.Item >
-                                    {mzformItems.map((item:any)=>(
-                                        <Space style={{ display: 'flex'}} key={item.key}>
-                                            <DateRangePicker
-                                                disabledDate={disabledDate1}
-                                                onDateSelected={(start,end) => updatemz(item.key,{rentBeginTime: start, rentEndTime: end})}/>
-                                            <Button onClick={() => removedzFormItemByKey(item.key)} type="link" style={{ marginLeft: 'auto' }}>
-                                                删除
-                                            </Button>
-                                        </Space>
-                                    ))
-                                    }
-                                </Form.Item>
-                                <Form.Item style={{display:'flex'}}>
-                                    <Space size='large'>
-                                        <Form.Item label='单元平面图'  >
-                                            <NoyasuoImgCmp onImageUpload={getunitImgName} oldBase64={getunitB64}/>
-                                            <Space style={{display:'flex',flexWrap:'wrap',marginTop:'25px'}}>
-                                                {unitB64.length>0?unitB64.map((item:any,index:number)=>{
-                                                    return(
-                                                        <div key={index} style={{ display: 'flex', alignItems: 'center', position: 'relative',marginLeft:'20px'}}>
-                                                            <Image src={item} style={{ width: '80px', height: '80px' }} />
-                                                            <Button
-                                                                type="primary"
-                                                                danger
-                                                                onClick={() => handleDeleteunitImg(index)}
-                                                                style={{
-                                                                    position: 'absolute',
-                                                                    top: '0',
-                                                                    left: '0',
-                                                                    zIndex: 1,
-                                                                    padding: '2px 4px',
-                                                                    transform: 'translate(-50%, -50%)',
-                                                                }}
-                                                            >
-                                                                删除
-                                                            </Button>
-                                                        </div>
-                                                    )
-                                                }):''}
-                                            </Space>
+                                {/*免租期天数*/}
+                                <div className="form-row" style={{ justifyContent: 'flex-start', marginBottom: 12 }}>
+                                    <div className="form-item-group">
+                                        <Form.Item label={
+                                            <div>
+                                                <div>免租期天数</div>
+                                                <div style={{ fontSize: 12, color: '#888' }}>已选 {summzqDay} 天</div>
+                                            </div>
+                                        }>
+                                            <InputNumber min={0} onChange={(e) => setMzq(e)} value={mzq} style={{ width: 140 }} />
                                         </Form.Item>
-                                        <Form.Item label='租户证件图片' >
-                                            <NoyasuoImgCmp onImageUpload={oldImgName} oldBase64={onB64}/>
-                                            <Space style={{display:'flex',flexWrap:'wrap',marginTop:'25px'}}>
-                                                {b64.length>0?b64.map((item:any,index:number)=>{
-                                                    return(
-                                                        <div key={index} style={{ display: 'flex', alignItems: 'center', position: 'relative',marginLeft:'20px'}}>
-                                                            <Image src={item} style={{ width: '80px', height: '80px' }} />
-                                                            <Button
-                                                                type="primary"
-                                                                danger
-                                                                onClick={() => handleDeletezuhu(index)}
-                                                                style={{
-                                                                    position: 'absolute',
-                                                                    top: '0',
-                                                                    left: '0',
-                                                                    zIndex: 1,
-                                                                    padding: '2px 4px',
-                                                                    transform: 'translate(-50%, -50%)',
-                                                                }}
-                                                            >
-                                                                删除
-                                                            </Button>
-                                                        </div>
-                                                    )
-                                                }):''}
-                                            </Space>
-                                            {/*<div style={{marginTop:'25px'}}>*/}
-                                            {/*    {b64?<Image src={b64} style={{width:'80px',height:'80px'}}/>:''}*/}
-                                            {/*</div>*/}
+                                    </div>
+                                    <Button type="primary" onClick={addDzFromItem} icon={<PlusOutlined />} style={{ marginTop: 4 }} />
+                                </div>
+                                {/*免租期日期*/}
+                                {mzformItems.map((item: any, index: any) => (
+                                    <div key={item.id} className="form-row" style={{ marginBottom: 8 }}>
+                                        <div className="form-item-group">
+                                            <Form.Item label="免租期">
+                                                <DatePicker.RangePicker
+                                                    disabledDate={disabledDate1}
+                                                    value={item.rentBeginTime && item.rentEndTime ? [dayjs(item.rentBeginTime), dayjs(item.rentEndTime)] : undefined}
+                                                    onChange={(_, dates) => updatemz(item.id, { rentBeginTime: dates[0], rentEndTime: dates[1] })}
+                                                />
+                                            </Form.Item>
+                                        </div>
+                                        <Button type="link" danger onClick={() => removedzFormItemByKey(item.id)}>删除</Button>
+                                    </div>
+                                ))}
+                                {/*管理费*/}
+                                <div className="form-row" style={{ justifyContent: 'flex-start', marginBottom: 12 }}>
+                                    <div className="form-item-group">
+                                        <Form.Item label={
+                                            <>
+                                                <div>管理费</div>
+                                                <Button type="primary" onClick={addManageFeeFromItem} icon={<PlusOutlined />} style={{ marginTop: 4 }} />
+                                            </>
+                                        }>
                                         </Form.Item>
-                                        <Form.Item label='补充协议图片' >
-                                            <ImageUploader onImageUpload={imgNames} oldBase64={xyB64}/>
-                                            <Space style={{display:'flex',flexWrap:'wrap'}}>
-                                                <Space style={{display:'flex',flexWrap:'wrap',marginTop:'25px'}}>
-                                                    {xyimgb64.length>0?xyimgb64.map((item:any,index:number)=>{
-                                                        return(
-                                                            <div key={index} style={{ display: 'flex', alignItems: 'center', position: 'relative',marginLeft:'20px'}}>
-                                                                <Image src={item} style={{ width: '80px', height: '80px' }} />
-                                                                <Button
-                                                                    type="primary"
-                                                                    danger
-                                                                    onClick={() => handleDelete(index)}
-                                                                    style={{
-                                                                        position: 'absolute',
-                                                                        top: '0',
-                                                                        left: '0',
-                                                                        zIndex: 1,
-                                                                        padding: '2px 4px',
-                                                                        transform: 'translate(-50%, -50%)',
-                                                                    }}
-                                                                >
-                                                                    删除
-                                                                </Button>
-                                                            </div>
-                                                        )
-                                                    }):''}
-                                                </Space>
-                                            </Space>
-                                        </Form.Item>
-                                    </Space>
-                                </Form.Item>
-                                <Form.Item style={{display:'flex'}}>
-                                    <Space size='large'>
-                                        <Form.Item >
-                                            <Button type="primary" onClick={addwuping}>
-                                                新增物品清单
-                                            </Button>
-                                            {wupinList.map((item:any,index:number) => (
-                                                <div style={{ display: 'flex'}} key={item.key}>
-                                                    <Form.Item label="物品名称">
-                                                        <Input
-                                                            value={item.wupinName}
-                                                            onChange={(value) => updateName(item.key,{wupinName:value.target.value})}
-                                                        />
-                                                    </Form.Item>
-                                                    <Form.Item label="交付标准">
-                                                        <Input
-                                                            value={item.wupininfo}
-                                                            onChange={(value) => updatebiaozhun(item.key,{wupininfo:value.target.value})}
-                                                        />
-                                                    </Form.Item>
-                                                    <Form.Item label="数量">
-                                                        <Input
-                                                            value={item.wupinNuber}
-                                                            onChange={(value) => updateMiber(item.key,{wupinNuber:value.target.value})}
-                                                        />
-                                                    </Form.Item>
-                                                    <Form.Item>
-                                                        <Button onClick={() => removeqingdan(item.key)} type="link" style={{ marginLeft: 'auto' }}>
-                                                            删除
-                                                        </Button>
-                                                    </Form.Item>
+                                    </div>
+                                </div>
+                                {/*管理费列表*/}
+                                {manageFeeList.map((item: any, index: any) => (
+                                    <div key={index} className="form-row" style={{ marginBottom: 8 }}>
+                                        <div className="form-item-group">
+                                            <Form.Item label="递增时段">
+                                                <DatePicker.RangePicker
+                                                    value={item.beginTime && item.endTime ? [dayjs(item.beginTime), dayjs(item.endTime)] : undefined}
+                                                    onChange={(_, dates) => upManageFee(item.id, { beginTime: dates[0], endTime: dates[1] })}
+                                                />
+                                            </Form.Item>
+                                        </div>
+                                        <div className="form-item-group">
+                                            <Form.Item label="递增%">
+                                                <InputNumber min={0} value={item.incremental} onChange={(value) => managedz(item.id,{incremental:value})} style={{ width: 120 }} />
+                                            </Form.Item>
+                                            <span style={{ fontSize: 12, color: '#666', lineHeight: '32px' }}>递增后管理费：{item.manageFee}元</span>
+                                        </div>
+                                        <Button type="link" danger onClick={() => removedManageFeeFormItemByKey(item.id)}>删除</Button>
+                                    </div>
+                                ))}
+                            </div>
+                            {/* 图片上传 */}
+                            <div className="form-section">
+                                <div className="section-title">合同附件上传</div>
+                                <div className="image-row">
+                                    <div className="image-upload-group">
+                                        <div className="group-title">单元平面图</div>
+                                        <NoyasuoImgCmp onImageUpload={getunitImgName} oldBase64={getunitB64} />
+                                        <div className="image-preview-list">
+                                            {unitB64.map((item: any, index: number) => (
+                                                <div className="image-item" key={index}>
+                                                    <Image src={item} className="preview-img" />
+                                                    <Button danger size="small" className="delete-btn" onClick={() => handleDeleteunitImg(index)}>删</Button>
                                                 </div>
                                             ))}
-                                        </Form.Item>
-                                    </Space>
-                                </Form.Item>
-                                <Form.Item style={{display:'flex'}}>
-                                    <Form.Item label='补充协议' name='remark'>
-                                        <Input.TextArea value={remark} onChange={changeremark}/>
+                                        </div>
+                                    </div>
+                                    <div className="image-upload-group">
+                                        <div className="group-title">租户证件图片</div>
+                                        <NoyasuoImgCmp onImageUpload={oldImgName} oldBase64={onB64} />
+                                        <div className="image-preview-list">
+                                            {b64.map((item: any, index: number) => (
+                                                <div className="image-item" key={index}>
+                                                    <Image src={item} className="preview-img" />
+                                                    <Button danger size="small" className="delete-btn" onClick={() => handleDeletezuhu(index)}>删</Button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="image-upload-group">
+                                        <div className="group-title">补充协议图片</div>
+                                        <NoyasuoImgCmp onImageUpload={imgNames} oldBase64={xyB64} />
+                                        <div className="image-preview-list">
+                                            {xyimgb64.map((item: any, index: number) => (
+                                                <div className="image-item" key={index}>
+                                                    <Image src={item} className="preview-img" />
+                                                    <Button danger size="small" className="delete-btn" onClick={() => handleDelete(index)}>删</Button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 物品清单 */}
+                            <div className="form-section">
+                                <div className="section-title">物品清单</div>
+                                <Button type="primary" onClick={addwuping} style={{ marginBottom: 12 }}>新增物品</Button>
+                                {wupinList.map((item: any, index: any) => (
+                                    <div key={index} className="form-row">
+                                        <div className="form-item-group">
+                                            <Form.Item label="物品名称">
+                                                <Input value={item.wupinName} onChange={(e) => updateName(item.key, { wupinName: e.target.value })} style={{ width: 160 }} />
+                                            </Form.Item>
+                                        </div>
+                                        <div className="form-item-group">
+                                            <Form.Item label="交付标准">
+                                                <Input value={item.wupininfo} onChange={(e) => updatebiaozhun(item.key, { wupininfo: e.target.value })} style={{ width: 160 }} />
+                                            </Form.Item>
+                                        </div>
+                                        <div className="form-item-group">
+                                            <Form.Item label="数量">
+                                                <Input value={item.wupinNuber} onChange={(e) => updateMiber(item.key, { wupinNuber: e.target.value })} style={{ width: 100 }} />
+                                            </Form.Item>
+                                        </div>
+                                        <Button type="link" danger onClick={() => removeqingdan(item.key)}>删除</Button>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* 补充协议 */}
+                            <div className="form-section">
+                                <div className="section-title">补充协议</div>
+                                <div className="form-item-group">
+                                    <Form.Item label="补充协议">
+                                        <Input.TextArea value={remark} onChange={changeremark} rows={4} style={{ width: 500, maxWidth: '100%' }} />
                                     </Form.Item>
-                                </Form.Item>
-                            </>
-                        ):''
-                    }
-                    <Form.Item>
-                        <Space>
-                            <Button type="primary" htmlType="submit">
-                                确定
-                            </Button>
+                                </div>
+                            </div>
+                        </>
+                    )}
+                    {/* 按钮 */}
+                    <Form.Item style={{ textAlign: 'center', marginTop: 32 }}>
+                        <Space size="large">
+                            <Button type="primary" htmlType="submit" size="small">保存草稿</Button>
+                            <Button type="primary" size="small" danger onClick={() => form.validateFields().then((values) => onFinish(values, 5))}>直接送审</Button>
+                            <Button onClick={onLikai} size="small">返回列表</Button>
+                            <Button danger onClick={resetAllFormData} size="small">清空草稿</Button>
                         </Space>
                     </Form.Item>
                 </Form>

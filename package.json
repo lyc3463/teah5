@@ -28,7 +28,11 @@
     "qrcode.react": "^4.2.0",
     "styled-components": "^6.1.18",
     "umi": "^4.4.11",
-    "weui": "^2.6.21"
+    "weui": "^2.6.21",
+    "xlsx": "^0.18.5",
+    "react-to-print": "^3.2.0",
+    "jspdf": "^2.5.2",
+    "html2canvas": "^1.4.1"
   },
   "devDependencies": {
     "@types/node": "^24.0.13",

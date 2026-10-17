@@ -55,10 +55,11 @@ const OldBillSumModel: NoticeInterface = {
             } else {
                 message.error(res.ErrorCode + res.Data);
             }
+            return res;
         },
         *fenye({ type, payload }, { put, call, select }): any {
             const res = yield call(OldBillSumService.fenye,payload?payload:pl);
-            console.log(res);
+            console.log(res)
             if (res.ErrorCode == 0) {
                 yield put({
                     type: 'count',

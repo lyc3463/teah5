@@ -8,7 +8,7 @@ import * as TenantInfoService from '@/services/tenantInfo';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import TenantInfoType from '@/ModelTypes/TypeCable';
+import TenantInfoType from '@/ModelTypes/TypeTenantInfo';
 import { fixPathname } from '@/utils/common';
 let pl={
     page:1,
@@ -131,6 +131,18 @@ const TenantInfoModels: TenantInfoInterface = {
         setup({ dispatch, history }, done) {
             return history.listen(({ location, action }) => {
                 const pathname = fixPathname(location.pathname);
+                if (StaticInfo.userId > 0 && pathname === '/propertyServerManage/tenantInfo/') {
+                    dispatch({
+                        type: 'fetch',
+                        payload: location.state,
+                    });
+                }
+                if (StaticInfo.userId > 0 && pathname === '/propertyServerManage/tenantInfo/') {
+                    dispatch({
+                        type: 'fenye',
+                        payload: location.state,
+                    });
+                }
             });
         },
     },

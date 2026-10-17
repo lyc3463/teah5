@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunk=self.webpackChunk||[]).push([[5219],{61080:function(d,u,n){n.r(u);var a=n(52676),r=function(){return(0,a.jsx)("div",{children:(0,a.jsx)("div",{children:"银行卡审批"})})};u.default=r}}]);

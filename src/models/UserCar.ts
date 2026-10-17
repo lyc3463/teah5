@@ -51,7 +51,7 @@ const UserCarModels: CarManageInterface = {
     effects: {
         *fetch({ type, payload }, { put, call, select }): any {
             const res = yield call(CarManageService.fetch, payload?payload:pl);
-            console.log('车辆列表',res)
+            console.log('res',res)
             if (res.ErrorCode == 0) {
                 yield put({
                     type: 'list',

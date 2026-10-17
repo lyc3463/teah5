@@ -8,7 +8,7 @@ import * as ByStagesService from '@/services/byStages';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import ByStagesType from '@/ModelTypes/TypeCable';
+import ByStagesType from '@/ModelTypes/TypeByStages';
 import { fixPathname } from '@/utils/common';
 let pl={
     page:1,
@@ -35,7 +35,6 @@ export interface ByStagesInterface {
         add: Effect;
         edit: Effect;
         remove: Effect;
-        fenye: Effect;
         check: Effect;
     };
     reducers: {
@@ -54,12 +53,16 @@ const ByStagesModel: ByStagesInterface = {
             if (res.ErrorCode == 0) {
                 yield put({
                     type: 'list',
-                    payload: { list: res.Data },
+                    payload: { list: res.Data.data },
+                });
+                yield put({
+                    type: 'count',
+                    payload: { count: res.Data },
                 });
             } else {
                 message.error(res.ErrorCode + res.Data);
             }
-            return res
+            return res;
         },
         *fetchOne({ type, payload }, { put, call, select }): any {
             const list = yield select((state: any) => state.ByStages.list);
@@ -94,17 +97,7 @@ const ByStagesModel: ByStagesInterface = {
             yield take('fetch/@@end');
             return result
         },
-        *fenye({ type, payload }, { put, call, select }): any {
-            const res = yield call(ByStagesService.fenye,payload?payload:pl);
-            if (res.ErrorCode == 0) {
-                yield put({
-                    type: 'count',
-                    payload: { count: res.Data },
-                });
-            } else {
-                message.error(res.ErrorCode + res.Data);
-            }
-        },
+
     },
     reducers: {
         list(state, action) {

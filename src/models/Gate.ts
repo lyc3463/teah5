@@ -8,7 +8,7 @@ import * as GateService from '@/services/gate';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import GateType from '@/ModelTypes/TypeCable';
+import GateType from '@/ModelTypes/TypeGate';
 import { fixPathname } from '@/utils/common';
 let pl={
     page:1,
@@ -130,7 +130,30 @@ const GateModels: GateInterface = {
         setup({ dispatch, history }, done) {
             return history.listen(({ location, action }) => {
                 const pathname = fixPathname(location.pathname);
-
+                if (StaticInfo.userId > 0 && pathname === '/gateManage/device/') {
+                    dispatch({
+                        type: 'fetch',
+                        payload: location.state,
+                    });
+                }
+                if (StaticInfo.userId > 0 && pathname === '/gateManage/device/') {
+                    dispatch({
+                        type: 'fenye',
+                        payload: location.state,
+                    });
+                }
+                if (StaticInfo.userId > 0 && pathname === '/gateManage/addGrouping/') {
+                    dispatch({
+                        type: 'fetch',
+                        payload: location.state,
+                    });
+                }
+                if (StaticInfo.userId > 0 && pathname === '/gateManage/editGrouping/') {
+                    dispatch({
+                        type: 'fetch',
+                        payload: location.state,
+                    });
+                }
             });
         },
     },

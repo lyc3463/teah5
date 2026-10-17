@@ -54,7 +54,7 @@ const TenantNotification=(props:any)=>{
     const logFenye=()=>{
         props.dispatch({
             type:"TenantInfo/fetch",
-            payload:{page,content,phone,startDate,endDate,stutes,openid,pageSize}
+            payload:{page,content,phone,startDate,endDate,stutes,openid:0,pageSize}
         }).then((res:TypeErrorCode)=>{
             if (res.ErrorCode==0){
                 setList(res.Data);
@@ -69,7 +69,7 @@ const TenantNotification=(props:any)=>{
     const getFenye=()=>{
         props.dispatch({
             type:"TenantInfo/fenye",
-            payload:{content,phone,startDate,endDate,stutes,openid,pageSize}
+            payload:{content,phone,startDate,endDate,stutes,openid:0,pageSize}
         });
     };
     const onChange=(e:number,pageSize:number)=>{

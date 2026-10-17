@@ -8,7 +8,7 @@ import * as StaffService from '@/services/staff';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import StaffType from '@/ModelTypes/TypeCable';
+import StaffType from '@/ModelTypes/TypeStaff';
 import { fixPathname } from '@/utils/common';
 let pl={
     page:1,
@@ -147,6 +147,18 @@ const StaffModel: StaffInterface = {
         setup({ dispatch, history }, done) {
             return history.listen(({ location, action }) => {
                 const pathname = fixPathname(location.pathname);
+                // if (StaticInfo.userId > 0 && pathname === '/enter/staff/') {
+                //     dispatch({
+                //         type: 'fetch',
+                //         payload: location.state,
+                //     });
+                // }
+                // if (StaticInfo.userId > 0 && pathname === '/enter/staff/') {
+                //     dispatch({
+                //         type: 'fenye',
+                //         payload: location.state,
+                //     });
+                // }
             });
         },
     },

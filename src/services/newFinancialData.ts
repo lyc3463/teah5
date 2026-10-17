@@ -19,8 +19,9 @@ export function remove(vals:any) {
 export function one(vals:any) {
     return getData(1785, [vals]);
 }
+// 审核/驳回统一接口：status 2=审核 15=驳回
 export function check(vals:any) {
-    return getData(1788, [vals,2]);
+    return getData(1788, [vals.id, vals.status]);
 }
 // 一键审核
 export function allReview() {

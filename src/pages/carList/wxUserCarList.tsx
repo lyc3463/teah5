@@ -32,7 +32,7 @@ const WxUserCarList=(props)=>{
     const getCarList=()=>{
         props.dispatch({
             type:'CarManage/fetch',
-            payload:{page,carNo,appId,stutes,pageSize,userType:1,uName,uPhone}
+            payload:{page,carNo,userId:0,stutes,pageSize,userType:1,uName,uPhone}
         })
     };
 

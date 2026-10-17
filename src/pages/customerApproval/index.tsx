@@ -83,7 +83,7 @@ const CustomerApproval=(props)=>{
             payload:{page,customName,customBeginTime,customEndTime,customStatus,userId,pageSize}
         }).then((res:TypeErrorCode)=>{
             if (res.ErrorCode==0){
-                setList(res.Data);
+                setList(res.Data?.data);
             }else {
                 message.error(res.Data);
             }

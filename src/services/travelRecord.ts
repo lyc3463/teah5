@@ -6,3 +6,7 @@ export function fetch(vals:any) {
 export function fenye(vals:any) {
     return getData(1302, [vals.deviceSn,vals.startDate,vals.endDate,vals.pageSize]);
 }
+
+
+
+

@@ -8,7 +8,7 @@ import * as SendingLogServer from '@/services/sendingLog';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import SendingLogType from '@/ModelTypes/TypeCable';
+import SendingLogType from '@/ModelTypes/TypeSendingLog';
 import { fixPathname } from '@/utils/common';
 let pl={
     current:1,
@@ -93,7 +93,18 @@ const SendingLogModel: SendingLogInterface = {
         setup({ dispatch, history }, done) {
             return history.listen(({ location, action }) => {
                 const pathname = fixPathname(location.pathname);
-
+                // if (StaticInfo.userId > 0 && pathname === '/message/sendingLog/') {
+                //     dispatch({
+                //         type: 'fetch',
+                //         payload: location.state,
+                //     });
+                // }
+                // if (StaticInfo.userId > 0 && pathname === '/message/sendingLog/') {
+                //     dispatch({
+                //         type: 'fenye',
+                //         payload: location.state,
+                //     });
+                // }
             });
         },
     },

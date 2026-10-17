@@ -236,17 +236,17 @@ const CheckAllFp=(props)=>{
     const getfenyeInfo=()=>{
         props.dispatch({
             type:'CheckFp/fenye',
-            payload:{startDate,endDate,openId,stutes,pageSize,titleName,tenannName,type,phone}
+            payload:{startDate,endDate,userId:0,stutes,pageSize,titleName,tenannName,type,phone}
         });
     };
     // 列表
     const logFenye=()=>{
         props.dispatch({
             type:"CheckFp/fetch",
-            payload:{page,startDate,endDate,openId,stutes,pageSize,titleName,tenannName,type,phone}
+            payload:{page,startDate,endDate,userId:0,stutes,pageSize,titleName,tenannName,type,phone}
         }).then((res:TypeErrorCode)=>{
             if (res.ErrorCode==0){
-                setList(res.Data);
+                setList(res.Data?.data);
             }
         })
     };

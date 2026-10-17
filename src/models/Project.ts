@@ -8,7 +8,7 @@ import * as ProjectService from '@/services/project';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import ProjectType from '@/ModelTypes/TypeCable';
+import ProjectType from '@/ModelTypes/TypeProject';
 import { fixPathname } from '@/utils/common';
 let pl={
     name:'',
@@ -45,6 +45,7 @@ const ProjectModel: ProjectInterface = {
     effects: {
         *fetch({ type, payload }, { put, call, select }): any {
             const res = yield call(ProjectService.fetch, payload?payload:pl);
+            console.log('res',res)
             if (res.ErrorCode == 0) {
                 yield put({
                     type: 'list',
@@ -71,9 +72,9 @@ const ProjectModel: ProjectInterface = {
             return result;
         },
         *edit({ payload, callback }, { call, put, take }): any {
-            const result = yield call(ProjectService.edit, payload);
-            yield put({ type: 'fetch', payload: pl });  // 重新加载数据
-            return result
+                const result = yield call(ProjectService.edit, payload);
+                yield put({ type: 'fetch', payload: pl });  // 重新加载数据
+                return result
 
         },
         *remove({ payload }, { call, put,take}): any {
@@ -107,6 +108,44 @@ const ProjectModel: ProjectInterface = {
         setup({ dispatch, history }, done) {
             return history.listen(({ location, action }) => {
                 const pathname = fixPathname(location.pathname);
+
+                if (StaticInfo.userId > 0 && pathname === '/financeManage/list/') {
+                    dispatch({
+                        type: 'fetch',
+                        payload: location.state,
+                    });
+                }
+                if (StaticInfo.userId > 0 && pathname === '/financeManage/projectList/') {
+                    dispatch({
+                        type: 'fetch',
+                        payload: location.state,
+                    });
+                }
+                if (StaticInfo.userId > 0 && pathname === '/financeManage/addAccountList/') {
+                    dispatch({
+                        type: 'fetch',
+                        payload: location.state,
+                    });
+                }
+
+                if (StaticInfo.userId > 0 && pathname === '/enter/addFinancialData/') {
+                    dispatch({
+                        type: 'fetch',
+                        payload: location.state,
+                    });
+                }
+                if (StaticInfo.userId > 0 && pathname === '/enter/financialDataInfo/') {
+                    dispatch({
+                        type: 'fetch',
+                        payload: location.state,
+                    });
+                }
+                if (StaticInfo.userId > 0 && pathname === '/enter/editFinancialData/') {
+                    dispatch({
+                        type: 'fetch',
+                        payload: location.state,
+                    });
+                }
             });
         },
     },

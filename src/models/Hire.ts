@@ -8,7 +8,7 @@ import * as HireService from '@/services/hire';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import TypeHire from '@/ModelTypes/TypeCable';
+import TypeHire from '@/ModelTypes/TypeHire';
 import { fixPathname } from '@/utils/common';
 let pl = {
     name:'',

@@ -1,14 +1,14 @@
 import { getData } from '@/network/http';
 
 export function fetch(vals:any) {
-    return getData(1267, [vals.page,vals.phone,vals.stutes,vals.startDate,vals.endDate,vals.pageSize]);
+    return getData(1267, [vals.page,vals.phone,vals.stutes,vals.startDate,vals.endDate,vals.pageSize,0]);
 }
 export function add(vals:any) {
-    return getData(1266, [vals.tenantId,vals.contractId,vals.discountMoney,vals.startDate,vals.endDate,vals.youhuiType]);
+    return getData(1266, [vals.tenantId,vals.contractId,vals.discountMoney,vals.startDate,vals.endDate,vals.youhuiType,vals.imgList]);
 }
 
 export function edit(vals:any) {
-    return getData(1506, [vals.uid,vals.preRen,vals.startDate,vals.endDate,vals.preType]);
+    return getData(1506, [vals.uid,vals.preRen,vals.startDate,vals.endDate,vals.preType,vals.imgList]);
 }
 export function check(vals:any) {
     return getData(1277, [vals]);
@@ -22,5 +22,10 @@ export function fenye(vals:any) {
 export function one(vals:any) {
     return getData(1514, [vals]);
 }
+// 缴费确定
+export function payment(vals:any) {
+    return getData(1764, [vals.uid,vals.paymentAmount,vals.paymentType,vals.payCrderCode,vals.payOrderType]);
+}
+
 
 

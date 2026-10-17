@@ -8,7 +8,7 @@ import * as CustomService from '@/services/checkDeept';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import CustomType from '@/ModelTypes/TypeCable';
+import CustomType from '@/ModelTypes/TypeCustom';
 import { fixPathname } from '@/utils/common';
 let pl={
     page:1,
@@ -59,6 +59,7 @@ const CheckDeeptModels: CustomInterface = {
             } else {
                 message.error(res.ErrorCode + res.Data);
             }
+            return res;
         },
         *fetchOne({ type, payload }, { put, call, select }): any {
             const list = yield select((state: any) => state.Custom.list);

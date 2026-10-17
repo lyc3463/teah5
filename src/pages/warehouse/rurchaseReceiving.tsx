@@ -37,7 +37,9 @@ const PurchaseReceiving = () => {
     const [pageSize, setPageSize] = useState(50);
     const [list, setList] = useState<any[]>([]);
     const [count, setCount] = useState(0);
-    const [filters, setFilters] = useState({orderCode: '', woCode: '', productsName: '', startDate: '2000-01-01', endDate: '2099-01-01', orderStatus: 0});
+    const [filters, setFilters] = useState({orderCode: '', woCode: '', productsName: '', startDate: '2000-01-01', endDate: '2099-01-01', orderStatus: 0
+        , unitsId: 0, warehouseId: 0, userId: 0, supplierName: 0
+    });
     const [selected, setSelected] = useState<any>(null);
     const [reviewRecord, setReviewRecord] = useState<any>(null);
     const [reviewReason, setReviewReason] = useState('');

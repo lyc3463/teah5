@@ -8,7 +8,7 @@ import * as InvoiceLookUpService from '@/services/InvoiceLookUp';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import TypeInvoiceLookUp from '@/ModelTypes/TypeCable';
+import TypeInvoiceLookUp from '@/ModelTypes/TypeInvoiceLookUp';
 import { fixPathname } from '@/utils/common';
 let pl = {
     page:1,
@@ -47,10 +47,15 @@ const InvoiceLookUpModel: InvoiceLookUpInterface = {
     effects: {
         *fetch({ type, payload }, { put, call, select }): any {
             const res = yield call(InvoiceLookUpService.fetch,payload?payload: pl);
+            console.log('res',res);
             if (res.ErrorCode == 0) {
                 yield put({
                     type: 'list',
-                    payload: { list: res.Data },
+                    payload: { list: res.Data.data },
+                });
+                yield put({
+                    type: 'count',
+                    payload: { count: res.Data },
                 });
             } else {
                 message.error(res.ErrorCode + res.Data);
@@ -112,6 +117,19 @@ const InvoiceLookUpModel: InvoiceLookUpInterface = {
         setup({ dispatch, history }, done) {
             return history.listen(({ location, action }) => {
                 const pathname = fixPathname(location.pathname);
+                if (StaticInfo.userId > 0 && pathname === '/enter/invoiceLookUp/') {
+                    dispatch({
+                        type: 'fetch',
+                        payload: location.state,
+                    });
+                }
+                if (StaticInfo.userId > 0 && pathname === '/enter/invoiceLookUp/') {
+                    dispatch({
+                        type: 'fenye',
+                        payload: location.state,
+                    });
+                }
+
             });
         },
     },

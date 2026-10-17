@@ -8,7 +8,7 @@ import * as RechargeService from '@/services/recharge';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import RechargeType from '@/ModelTypes/TypeCable';
+import RechargeType from '@/ModelTypes/TypeRecharge';
 import { fixPathname } from '@/utils/common';
 let pl={
     page:1,
@@ -55,6 +55,7 @@ const RechargeModel: RechargeInterface = {
             } else {
                 message.error(res.ErrorCode + res.Data);
             }
+            return res;
         },
         *add({ payload, callback }, { call, put, take }): any {
             const result = yield call(RechargeService.add, payload);

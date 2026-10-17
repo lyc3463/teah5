@@ -8,7 +8,7 @@ import * as ElectricChargeService from '@/services/electricCharge';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import TypeElectricCharge from '@/ModelTypes/TypeCable';
+import TypeElectricCharge from '@/ModelTypes/TypeElectricCharge';
 import { fixPathname } from '@/utils/common';
 let pl = {
     address:'',

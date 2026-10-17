@@ -8,8 +8,9 @@ import * as PreferentialService from '@/services/preferential';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import PreferentialType from '@/ModelTypes/TypeCable';
+import PreferentialType from '@/ModelTypes/TypePreferential';
 import { fixPathname } from '@/utils/common';
+import {check} from "@/services/preferential";
 let pl={
     page:1,
     phone:'',
@@ -35,7 +36,6 @@ export interface PreferentialInterface {
         add: Effect;
         edit: Effect;
         remove: Effect;
-        fenye: Effect;
         check: Effect;
     };
     reducers: {
@@ -50,16 +50,15 @@ const PreferentialModel: PreferentialInterface = {
     state: {},
     effects: {
         *fetch({ type, payload }, { put, call, select }): any {
-
             const res = yield call(PreferentialService.fetch, payload?payload:pl);
-            // const resc = yield call(
-            //   GongsiService.fetchcount,
-            //   _.omit(pl, ['page']),
-            // );
             if (res.ErrorCode == 0) {
                 yield put({
                     type: 'list',
-                    payload: { list: res.Data },
+                    payload: { list: res.Data.data },
+                });
+                yield put({
+                    type: 'count',
+                    payload: { count: res.Data },
                 });
             } else {
                 message.error(res.ErrorCode + res.Data);
@@ -99,17 +98,7 @@ const PreferentialModel: PreferentialInterface = {
             yield take('fetch/@@end');
             return result
         },
-        *fenye({ type, payload }, { put, call, select }): any {
-            const res = yield call(PreferentialService.fenye,payload?payload:pl);
-            if (res.ErrorCode == 0) {
-                yield put({
-                    type: 'count',
-                    payload: { count: res.Data },
-                });
-            } else {
-                message.error(res.ErrorCode + res.Data);
-            }
-        },
+
     },
     reducers: {
         list(state, action) {

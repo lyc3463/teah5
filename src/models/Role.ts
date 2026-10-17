@@ -8,7 +8,7 @@ import * as RoleService from '@/services/role';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import RoleType from '@/ModelTypes/TypeCable';
+import RoleType from '@/ModelTypes/TypeRole';
 import { fixPathname } from '@/utils/common';
 let pl={
     name:''

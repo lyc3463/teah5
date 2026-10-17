@@ -8,7 +8,7 @@ import * as CheckFpService from '@/services/checkFpSD';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import CheckFpType from '@/ModelTypes/TypeCable';
+import CheckFpType from '@/ModelTypes/TypeCheckFp';
 import { fixPathname } from '@/utils/common';
 let pl={
     page:1,
@@ -54,7 +54,11 @@ const CheckFpSDModels: CheckFpInterface = {
             if (res.ErrorCode == 0) {
                 yield put({
                     type: 'list',
-                    payload: { list: res.Data },
+                    payload: { list: res.Data.data },
+                });
+                yield put({
+                    type: 'count',
+                    payload: { count: res.Data },
                 });
             } else {
                 message.error(res.ErrorCode + res.Data);

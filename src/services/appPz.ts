@@ -1,9 +1,9 @@
 import {getData, postData} from '@/network/http';
-export function fetchpz() {
-    return getData(1493, []);
+export function fetchpz(type) {
+    return getData(1493, [type]);
 }
-export function addpz(vals:any) {
-    return getData(1492, [vals]);
+export function addpz(vals:number,type:number) {
+    return getData(1492, [vals,type]);
 }
 export function enidWxID(authCorpId:string) {
     return getData(1603, [authCorpId]);
@@ -25,4 +25,16 @@ export function getWxInfo(vals:any) {
 }
 export function getWxInfoList(vals) {
     return getData(1612, [vals]);
+}
+// 查看销售折扣率设置
+export function thenBuckleOne() {
+    return getData(2115, []);
+}
+// 添加销售折扣率设置
+export function addThenBuckle(vals:number) {
+    return getData(2113, [vals]);
+}
+// 编辑销售折扣率设置
+export function editThenBuckle(vals:number) {
+    return getData(2114, [vals]);
 }

@@ -8,7 +8,7 @@ import * as HouseBillService from '@/services/houseBill';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import HouseBillType from '@/ModelTypes/TypeCable';
+import HouseBillType from '@/ModelTypes/TypeHouseBill';
 import { fixPathname } from '@/utils/common';
 let pl = {
     tenantId:0

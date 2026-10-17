@@ -55,7 +55,7 @@ const ChangeRenew=(props)=>{
             payload:{page,phone,stutes,startDate,endDate,pageSize}
         }).then((res:TypeErrorCode)=>{
             if (res.ErrorCode==0){
-                setList(res.Data);
+                setList(res.Data?.data);
             }
         })
     };

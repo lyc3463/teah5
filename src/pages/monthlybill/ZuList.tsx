@@ -30,37 +30,40 @@ const ZuList=(props:any)=>{
     const sousuo=()=>{
         setPage(1);
         getzujinList();
-        logFenye();
+        // logFenye();
     };
     // 查看租金缴费列表
     const getzujinList=()=>{
         ArrearsBillService.zujinList({page,name,phone,startDate,endDate,tenandId,stutes,pageSize}).then((res:TypeErrorCode)=>{
             if (res.ErrorCode==0){
-                setdataSource(res.Data);
-            }else {
-                message.error(res.Data);
-            }
-        })
-    };
-    // 分页
-    const logFenye=()=>{
-        ArrearsBillService.zujinListFenye({name,phone,startDate,endDate,tenandId,stutes,pageSize}).then((res:TypeErrorCode)=>{
-            if (res.ErrorCode==0){
+                setdataSource(res.Data?.data);
                 setcount(res.Data.count);
-                setmoneySum(res.Data.moneySum);
+                setmoneySum(res.Data.billSum);
                 setNotBillSum(res.Data.NotBillSum);
             }else {
                 message.error(res.Data);
             }
         })
     };
+    // 分页
+    // const logFenye=()=>{
+    //     ArrearsBillService.zujinListFenye({name,phone,startDate,endDate,tenandId,stutes,pageSize}).then((res:TypeErrorCode)=>{
+    //         if (res.ErrorCode==0){
+    //             setcount(res.Data.count);
+    //             setmoneySum(res.Data.moneySum);
+    //             setNotBillSum(res.Data.NotBillSum);
+    //         }else {
+    //             message.error(res.Data);
+    //         }
+    //     })
+    // };
     // 监听页数
     const onChange=(e:number,pageSize:number)=>{
         setPage(e);
         setPageSize(pageSize);
     };
     useEffect(() => {
-        logFenye();
+        // logFenye();
     }, []);
     useEffect(() => {
         getzujinList();
@@ -150,7 +153,7 @@ const ZuList=(props:any)=>{
                         <div style={getTextStyle()}>账单周期:{dayjs(item.billBeginDate).format("YYYY-MM-DD")}至{dayjs(item.billEndDate).format("YYYY-MM-DD")}</div>
                         <div style={getTextStyle()}>租户姓名:{item.tenant_name}</div>
                         <div style={getTextStyle()}>租户手机号:{item.tenant_phone}</div>
-                        <div style={getTextStyle()}>账单类型:租金/管理费</div>
+                        <div style={getTextStyle()}>账单类型:租金</div>
                         <div style={getTextStyle()}>缴费金额(元): {item.payAmount.toFixed(2)}</div>
                         <div style={getTextStyle()}>已交金额(元): {item.stopAmount.toFixed(2)}</div>
                         <div style={getTextStyle()}>违约金天数: {item.defaultNum}天</div>

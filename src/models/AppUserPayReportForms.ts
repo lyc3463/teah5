@@ -8,7 +8,7 @@ import * as payReportFormsService from '@/services/payReportForms';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import PayReportFormsType from '@/ModelTypes/TypeCable';
+import PayReportFormsType from '@/ModelTypes/TypePayReportForms';
 import { fixPathname } from '@/utils/common';
 import {fetch1598} from "@/services/payReportForms";
 let pl={

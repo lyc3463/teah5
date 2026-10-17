@@ -18,7 +18,7 @@ const EditRole=(props)=>{
     const location=useLocation();
     const [spinning,setspinning]=useState(false);
     const formRef =useRef();
-    const [selected, setSelected] = useState<string[]>(Array(441).fill('0'));
+    const [selected, setSelected] = useState<string[]>(Array(610).fill('0'));
     // 路由参数
     const [uid,setUid]=useState<string|undefined>();
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);

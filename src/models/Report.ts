@@ -4,11 +4,11 @@ import {
     Subscription,
     history as UmiHistorty,
 } from 'umi';
-import * as ReportService from '@/services/order';
+import * as ReportService from '@/services/report';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import ReportType from '@/ModelTypes/TypeCable';
+import ReportType from '@/ModelTypes/TypeReport';
 import { fixPathname } from '@/utils/common';
 let pl={
     page:1,
@@ -36,8 +36,8 @@ export interface ReportInterface {
         add: Effect;
         edit: Effect;
         remove: Effect;
-        reject: Effect;
         fenpei: Effect;
+        reject: Effect;
     };
     reducers: {
         list: Reducer<ReportType[]>;
@@ -64,6 +64,7 @@ const ReportModels: ReportInterface = {
             } else {
                 message.error(res.ErrorCode + res.Data);
             }
+            return res;
         },
         *fetchOne({ type, payload }, { put, call, select }): any {
             const list = yield select((state: any) => state.Report.list);
@@ -94,8 +95,7 @@ const ReportModels: ReportInterface = {
         },
         *reject({ type, payload }, { put, call, select }): any {
             const result = yield call(ReportService.reject, payload);
-            // yield put({ type: 'fetch', payload: pl });
-            // yield take('fetch/@@end');
+
             return result
         },
         *fenpei({ payload, callback }, { call, put, take }): any {
@@ -129,6 +129,19 @@ const ReportModels: ReportInterface = {
         setup({ dispatch, history }, done) {
             return history.listen(({ location, action }) => {
                 const pathname = fixPathname(location.pathname);
+                // if (StaticInfo.userId > 0 && pathname === '/propertyServerManage/reportLog/') {
+                //     dispatch({
+                //         type: 'fetch',
+                //         payload: location.state,
+                //     });
+                // }
+                // if (StaticInfo.userId > 0 && pathname === '/propertyServerManage/reportLog/') {
+                //     dispatch({
+                //         type: 'fenye',
+                //         payload: location.state,
+                //     });
+                // }
+
             });
         },
     },

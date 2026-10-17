@@ -8,7 +8,7 @@ import * as WaterRateService from '@/services/waterRate';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import WaterRateType from '@/ModelTypes/TypeCable';
+import WaterRateType from '@/ModelTypes/TypeWaterRate';
 import { fixPathname } from '@/utils/common';
 let pl = {
     name:'',

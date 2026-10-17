@@ -1,5 +1,5 @@
-type TypeCollector  = {
+type TypeCable  = {
     id?: number; //id
 };
 
-export default TypeCollector;
+export default TypeCable;

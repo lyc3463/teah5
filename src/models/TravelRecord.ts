@@ -8,8 +8,10 @@ import * as TravelRecordService from '@/services/travelRecord';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import TravelRecordType from '@/ModelTypes/TypeCable';
+import TravelRecordType from '@/ModelTypes/TypeTravelRecord';
 import { fixPathname } from '@/utils/common';
+import * as TransferenceService from "@/services/transference";
+import {shoudongdian} from "@/services/movementCable";
 let pl={
     page:1,
     deviceSn:'',
@@ -91,7 +93,18 @@ const TravelRecordModel: QuestionnaireInterface = {
         setup({ dispatch, history }, done) {
             return history.listen(({ location, action }) => {
                 const pathname = fixPathname(location.pathname);
-
+                if (StaticInfo.userId > 0 && pathname === '/AccessControlManage/TravelRecord/') {
+                    dispatch({
+                        type: 'fetch',
+                        payload: location.state,
+                    });
+                }
+                if (StaticInfo.userId > 0 && pathname === '/AccessControlManage/TravelRecord/') {
+                    dispatch({
+                        type: 'fenye',
+                        payload: location.state,
+                    });
+                }
             });
         },
     },

@@ -8,7 +8,7 @@ import * as AppUserService from '@/services/appUser';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import TypeAppUser from '@/ModelTypes/TypeCable';
+import TypeAppUser from '@/ModelTypes/TypeAppUser';
 import { fixPathname } from '@/utils/common';
 let pl={
     page:1,
@@ -46,7 +46,6 @@ const AppUserModels: AppUserInterface = {
         *fetch({ type, payload }, { put, call, select }): any {
             const res = yield call(AppUserService.fetch, payload?payload:pl);
             if (res.ErrorCode == 0) {
-                console.log('res',res);
                 yield put({
                     type: 'list',
                     payload: { list: res.Data.data },

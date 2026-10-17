@@ -8,8 +8,9 @@ import * as MovementCableService from '@/services/movementCable';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import MovementCableType from '@/ModelTypes/TypeCable';
+import MovementCableType from '@/ModelTypes/TypeMovementCable';
 import { fixPathname } from '@/utils/common';
+import * as TravelRecordService from "@/services/travelRecord";
 let pl={
     page:1,
     collector_id:'',
@@ -55,6 +56,7 @@ const MovementCableModel: MovementCableInterface = {
             } else {
                 message.error(res.ErrorCode + res.Data);
             }
+            return res;
         },
         *fenye({ type, payload }, { put, call, select }): any {
             const res = yield call(MovementCableService.fenye,payload?payload:pl);
@@ -99,7 +101,18 @@ const MovementCableModel: MovementCableInterface = {
         setup({ dispatch, history }, done) {
             return history.listen(({ location, action }) => {
                 const pathname = fixPathname(location.pathname);
-
+                if (StaticInfo.userId > 0 && pathname === '/MeterReading/movementCable/') {
+                    dispatch({
+                        type: 'fetch',
+                        payload: location.state,
+                    });
+                }
+                if (StaticInfo.userId > 0 && pathname === '/MeterReading/movementCable/') {
+                    dispatch({
+                        type: 'fenye',
+                        payload: location.state,
+                    });
+                }
             });
         },
     },

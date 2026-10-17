@@ -8,7 +8,7 @@ import * as TixianService from '@/services/ruzhang';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import TixianType from '@/ModelTypes/TypeCable';
+import TixianType from '@/ModelTypes/TypeTixian';
 import { fixPathname } from '@/utils/common';
 let pl={
     page:1,

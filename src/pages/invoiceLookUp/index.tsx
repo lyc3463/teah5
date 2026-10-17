@@ -65,7 +65,7 @@ const InvoiceLookUp=(props:any)=>{
             payload:{page,name,stutes,openID,pageSize}
         }).then((res:TypeErrorCode)=>{
             if (res.ErrorCode==0){
-                setList(res.Data);
+                setList(res.Data?.data);
             }
         })
     };

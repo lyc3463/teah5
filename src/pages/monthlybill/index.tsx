@@ -10,6 +10,9 @@ import WaterKoufeiList from "@/pages/monthlybill/WaterKoufeiList";
 import LiquidatedDamagesList from "@/pages/monthlybill/LiquidatedDamagesList";
 import {NavBar} from "antd-mobile";
 import {history} from "@@/core/history";
+import OutZu from "@/pages/monthlybill/outZu";
+import RepairInvoice from "@/pages/monthlybill/repairInvoice";
+import ManagementFee from "@/pages/monthlybill/managementFee";
 const MonthlyBill=(props:any)=>{
     const [activeKey, setActiveKey] = useState(sessionStorage.getItem('zdActive') || '1');
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -74,7 +77,7 @@ const MonthlyBill=(props:any)=>{
                  当月账单
              </NavBar>
             <Tabs activeKey={activeKey} onChange={onChange} tabBarScroll style={getTabsStyle()}>
-                <Tabs.TabPane tab='租金/管理费' key='1' tabStyle={getTabPaneStyle()}>
+                <Tabs.TabPane tab='租金' key='1' tabStyle={getTabPaneStyle()}>
                     <ZuList/>
                 </Tabs.TabPane>
                 <Tabs.TabPane tab='公共缴费' key='2' tabStyle={getTabPaneStyle()}>
@@ -91,6 +94,15 @@ const MonthlyBill=(props:any)=>{
                 </Tabs.TabPane>
                 <Tabs.TabPane tab='违约金账单' key='6' tabStyle={getTabPaneStyle()}>
                     <LiquidatedDamagesList/>
+                </Tabs.TabPane>
+                <Tabs.TabPane tab='退租账单' key='7' tabStyle={getTabPaneStyle()}>
+                    <OutZu/>
+                </Tabs.TabPane>
+                <Tabs.TabPane tab='报修账单' key='8' tabStyle={getTabPaneStyle()}>
+                    <RepairInvoice/>
+                </Tabs.TabPane>
+                <Tabs.TabPane tab='管理费账单' key='9' tabStyle={getTabPaneStyle()}>
+                    <ManagementFee/>
                 </Tabs.TabPane>
             </Tabs>
         </div>

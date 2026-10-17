@@ -17,7 +17,7 @@ const AddUser=(props:any)=>{
     const navigate=useNavigate();
     const treeData = buildTree(qxTree);
     const [roleList,setRoleList]=useState([]);
-    const [selected, setSelected] = useState<string[]>(Array(441).fill('0'));
+    const [selected, setSelected] = useState<string[]>(Array(610).fill('0'));
     const [isTask,setisTask]=useState([0]);
     const [windowWidth, setWindowWidth] = useState(window.innerWidth);
     const [qyList,setqyList]=useState([]);

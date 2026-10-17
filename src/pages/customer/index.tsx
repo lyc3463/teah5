@@ -1,19 +1,19 @@
-import {Button, Card, Form, Input, List, Pagination, Select, Space, Table, Tag, Tooltip} from "antd";
+import {Button, Form, Input, List, Pagination, Space, Table, Tag, Tooltip, Modal, message} from "antd";
 import {connect,history,useLocation} from "umi";
 import {useEffect, useState} from "react";
 import TypeErrorCode from "@/ModelTypes/TypeErrorCode";
-import {NavBar, Popup} from "antd-mobile";
-import {joinUnitNames} from "@/utils/OpenTool";
-import PageLayout from "@/components/PageLayout ";
-import DateRangePicker from "@/components/DateRangePickerProps";
+import {calculateSums, checkSessionStorage, fuzzySearch, updateSessionStorage, ensureArrayLength, buildTree} from "@/utils/OpenTool";
+import {qxTree} from '@/constants/qxMenu/wxMenu';
+import * as zuhuServie from "@/services/zuhu";
+import TableMobile from '@/components/TableMobile';
+import {ArrowLeftOutlined} from '@ant-design/icons';
 
-const Customer=(props:any)=>{
+const Zuhuguanlian=(props:any)=>{
     const location=useLocation();
-    const [windowWidth, setWindowWidth] = useState(window.innerWidth);
     // 姓名
-    const [name,setName]=useState('');
+    const [name,setName]=useState(checkSessionStorage('/kehu/zuhuguanlian/','name')||'');
     // 手机号
-    const [phone,setPhone]=useState('');
+    const [phone,setPhone]=useState(checkSessionStorage('/kehu/zuhuguanlian/','phone')||'');
     // 页数
     const [page,setPage]=useState(1);
     // 每页数量
@@ -34,16 +34,230 @@ const Customer=(props:any)=>{
     const [integralSum,setintegralSum]=useState(0);
     // 余额
     const [balanceSum,setbalanceSum]=useState(0);
-    const [filterOpen, setFilterOpen] = useState(false);
+    // 小程序
+    const [appid,setAppid]=useState(0);
+    const [isOpen,setIsOpen]=useState(false);
+    const [selected, setSelected] = useState<string[]>(Array(595).fill('0'));
+    const [isSpinning,setIsSpinning]=useState(false);
+    const treeData = buildTree(qxTree);
+    const checkboxRelationMap = {
+        190: [209, 263],
+        275: [272],
+        271: [268, 404, 269],
+        392: [176],
+        369: [366, 368, 367, 365],
+        186: [307],
+        363: [366, 364],
+        225: [285],
+        230: [285],
+        233: [285],
+        236: [285],
+        239: [239],
+        60: [61, 355, 347, 336, 413, 400, 435],
+        399: [421, 422, 423, 424, 404],
+        110: [111],
+        426: [427, 428, 429, 430],
+        589: [590, 591,594,64]
+    };
+    const TreeMenu=({ tree, selected,disabled, setSelected }: { tree: qxTree[]; selected: string[]; setSelected: (newSelected: string[]) => void })=> {
+        return (
+            <ul>
+                {tree.map(node => (
+                    <li key={node.id}>
+                        <input
+                            type="checkbox"
+                            checked={selected[node.id] === '1'}
+                            onChange={e => handleCheckboxChange(node.id, e.target.checked)}
+                        />
+                        {node.name}
+                        {node.children && node.children.length > 0 && (
+                            <TreeMenu tree={node.children} selected={selected} setSelected={setSelected} />
+                        )}
+                    </li>
+                ))}
+            </ul>
+        );
+    };
+    const handleCheckboxChange = (id: number, isChecked: boolean) => {
+        const newSelected = [...selected];
+        // 设置当前项
+        newSelected[id] = isChecked ? '1' : '0';
+        // 如果当前是勾选，才自动关联其他选项
+        if (isChecked && checkboxRelationMap[id]) {
+            checkboxRelationMap[id].forEach(relatedId => {
+                newSelected[relatedId] = '1';
+            });
+        }
+        setSelected(newSelected);
+    };
+    const editInfo=(vla:any)=>{
+        setAppid(vla.id);
+        setIsOpen(true);
+        const authorityString = vla.authority;
+        const splitArray = authorityString.split('');
+        const adjustedArray = ensureArrayLength(splitArray, selected.length, '0');
+        setSelected(adjustedArray);
+    };
+    // 确定编辑权限
+    const onOk=()=>{
+        let joinqx=selected.join('');
+        setIsSpinning(true);
+        console.log(joinqx);
+        
+        zuhuServie.editzuhuAuth(appid,joinqx)
+            .then((res:any)=>{
+                if (res.ErrorCode==0){
+                    message.success('修改成功');
+                    setIsSpinning(false);
+                    setIsOpen(false);
+                    logFenye();
+                }else {
+                    message.error(res.Data);
+                    setIsOpen(false);
+                    setIsSpinning(false);
+                }
+            })
+    };
+    const columns =[
+        {
+            title: '单元名称',
+            dataIndex: 'unitList',
+            key: 'unitList',
+            sorter: {
+                compare: (a, b) => {
+                    // 获取 a 和 b 的 unitList 中第一个 unit_name
+                    const aUnitName = a.unitList[0]?.unit_name || '';
+                    const bUnitName = b.unitList[0]?.unit_name || '';
 
+                    // 比较 unit_name
+                    if (aUnitName < bUnitName) return -1;
+                    if (aUnitName > bUnitName) return 1;
+                    return 0;
+                },
+                multiple: 1,
+            },
+            width:200,
+            render: (text:any, record:any) => {
+                const limitedUnitList = record.unitList.slice(0, 2);
+                return(
+                        <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>
+                            {limitedUnitList.map((item, index) => (
+                                <span key={index}>{item.unit_name}{index < limitedUnitList.length - 1 ? ',' : ''}</span>
+                            ))}
+                            {/* 如果 unitList 数组长度大于 2，则显示省略号或其他提示 */}
+                            {record.unitList.length > 2 && <span>...</span>}
+                        </div>
+                )
+            }
+        },
+        {
+            title: '租户姓名',
+            dataIndex: 'tenant_name',
+            key: 'tenant_name',
+        },
+        {
+            title: '联系方式',
+            dataIndex: 'tenant_phone',
+            key: 'tenant_phone',
+        },
+        {
+            title: '身份证',
+            dataIndex: 'tenant_card',
+            key: 'tenant_card',
+            width:250,
+        },
+        {
+            title: '积分(分)',
+            dataIndex: 'integral',
+            key: 'integral',
+            sorter: (a, b) => a.integral - b.integral,
+            render:(text:any,record:any,)=>{
+                return(
+                    <div>
+                        {record.integral.toFixed(2)}元
+                    </div>
+                )
+            }
+        },
+        {
+            title: '余额(元)',
+            dataIndex: 'balance',
+            key: 'balance',
+            sorter: (a, b) => a.balance - b.balance,
+            render:(text:any,record:any,)=>{
+                return(
+                    <div>
+                        {record.balance.toFixed(2)}元
+                    </div>
+                )
+            }
+        },
+        {
+            title: '全部账单(元)',
+            dataIndex: 'billMoney',
+            key: 'billMoney',
+            sorter: (a, b) => a.billMoney - b.billMoney,
+            render:(text:any,record:any,)=>{
+                return(
+                    <div>
+                        {record.billMoney.toFixed(2)}元
+                    </div>
+                )
+            }
+        },
+        {
+            title: '押金总和(元)',
+            dataIndex: 'deposit',
+            key: 'deposit',
+            sorter: (a, b) => a.deposit - b.deposit,
+            render:(text:any,record:any,)=>{
+                return(
+                    <div>
+                        {record.deposit.toFixed(2)}元
+                    </div>
+                )
+            }
+        },
+        // {
+        //     title: '关联状态',
+        //     dataIndex: 'userId',
+        //     key: 'userId',
+        //     render: (text:any, record:any) => {
+        //         return(
+        //             <Space>
+        //                 {
+        //                     record.userId?<Tag color='green'>已关联</Tag>:<Tag color='red'>用户未登录</Tag>
+        //                 }
+        //             </Space>
+        //         )
+        //     }
+        // },
+        {
+            title: '操作',
+            dataIndex: 'caoz',
+            key: 'caoz',
+            render: (text:any, record:any) => {
+                return(
+                    <Space>
+                        <Button type='primary' onClick={()=>toguanlian(record.id)}>关联</Button>
+                        <Button type='primary' onClick={()=>toyajinlist(record.id)}>押金列表</Button>
+                        <Button type='primary' onClick={()=>editInfo(record)}>权限</Button>
+                    </Space>
+                )
+            }
+        }
+    ];
     // 去关联页面
     const toguanlian=(e:number)=>{
         history.push(`/customer/byzhuhu?id=${e}`);
     };
+    // 去关联页面
+    const toyajinlist=(e:number)=>{
+        history.push(`/customer/yajinlist?id=${e}`);
+    };
     useEffect(() => {
         logFenye();
     }, [page,pagecount]);
-
     // 分页
     const logFenye=()=>{
         props.dispatch({
@@ -51,7 +265,6 @@ const Customer=(props:any)=>{
             payload:{page,name,phone,pagecount}
         }).then((res:TypeErrorCode)=>{
             if (res.ErrorCode==0){
-                console.log('res',res)
                 setZuhuList(res.Data.data);
                 setOldZuhuList(res.Data.data);
                 setcount(res.Data.count);
@@ -65,108 +278,116 @@ const Customer=(props:any)=>{
     // 搜索按钮
     const shousuo=()=>{
         setPage(1);
+        // logFenyeInfo();
         logFenye();
-        setFilterOpen(false);
     };
-
     const onChange=(val:number,pageSize:number)=>{
         setPage(val);
         setpagecount(pageSize);
     };
-
+    const chaxundanyuan=()=>{
+        let a=fuzzySearch(oldZuhuList,unitName);
+        setZuhuList(a);
+        let b=calculateSums(a);
+        setcount(a.length);
+        setbalanceSum(b.balanceSum);
+        setbillMoneySum(b.billMoneySum);
+        setdepositSum(b.depositSum);
+        setintegralSum(b.integralSum);
+    };
     const changeName=(e:any)=>{
         setName(e.target.value);
+        updateSessionStorage('/kehu/zuhuguanlian/','name',e.target.value);
     };
     const changePhone=(e:any)=>{
         setPhone(e.target.value);
+        updateSessionStorage('/kehu/zuhuguanlian/','phone',e.target.value);
     };
-
     return(
         <div>
-            <PageLayout
-                title="客户管理"
-                onBack={()=>history.push('/dashboard/')}
-            >
-                <List style={{padding:'0 10px'}}>
-                    <List.Item>
-                        <Space style={{paddingBottom:'10px'}}>
-                            <Button type="primary" onClick={() => setFilterOpen(true)}>
-                                筛选
-                            </Button>
-                        </Space>
-                    </List.Item>
-                </List>
-                <Popup
-                    visible={filterOpen}
-                    onMaskClick={() => setFilterOpen(false)}
-                >
-                    <div style={{ padding: 16 }}>
-
-                        <div style={{ marginTop: 15 }}>姓名</div>
+            <Button type="text" size="small" icon={<ArrowLeftOutlined />} onClick={() => history.push('/dashboard')}></Button>
+            <List>
+                <List.Item>
+                    <Space>
                         <Input
+                            addonBefore="姓名:"
                             onChange={changeName}
                             value={name}
                         />
-                        <div style={{ marginTop: 15 }}>手机号</div>
                         <Input
+                            addonBefore="手机号:"
                             onChange={changePhone}
                             value={phone}
                         />
-                        <Button
-                            block
-                            color="primary"
-                            style={{ marginTop: 20 }}
-                            onClick={shousuo}
-                        >
+                        <Button type="primary" onClick={shousuo}>
                             搜索
                         </Button>
-                    </div>
-                </Popup>
-                <div style={{
-                    height: 'calc(100vh - 230px)',
-                    overflowY: 'auto',
-                    padding: '0 12px'
-                }}>
-                    {ZuhuList.map((item) => (
-                        <List.Item
-                            key={item.id}
-                            style={{
-                                border: '1px solid #e5e6eb',
-                                borderRadius: '8px',
-                                padding: '16px',
-                                marginBottom: '12px',
-                                backgroundColor: '#fff',
-                                boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-                            }}
-                        >
-                            <div style={{ fontSize: 16, color: "#666", marginTop: 4 }}><Tag color="blue">姓名</Tag>: {item.tenant_name}</div>
-                            <div style={{ fontSize: 16, color: "#666", marginTop: 4 }}><Tag color="green">联系方式</Tag>: {item.tenant_phone}</div>
-                            <div style={{ fontSize: 16, color: "#666", marginTop: 4 }}><Tag color="orange">单元</Tag>: {joinUnitNames(item.unitList)}</div>
-                            <div style={{ fontSize: 16, color: "#666", marginTop: 4 }}><Tag color="purple">余额(元)</Tag>: {item.balance.toFixed(2)}</div>
-                            <div style={{ fontSize: 16, color: "#666", marginTop: 4 }}><Tag color="red">全部账单(元)</Tag>: {item.billMoney.toFixed(2)}</div>
-                            <div style={{ fontSize: 16, color: "#666", marginTop: 4 }}><Tag color="cyan">公共押金(元)</Tag>: {item.deposit.toFixed(2)}</div>
-                            <Button type="primary" onClick={() => toguanlian(item.id)} style={{ fontSize: 16,  marginTop: 4 }}>
-                                关联
-                            </Button>
-                        </List.Item>
-                    ))}
-                </div>
-                <div style={{display:'flex',justifyContent:'space-around',marginTop:'5px'}}>
-                    <div>总余额：{balanceSum?balanceSum:0}元</div>
-                    <div>总账单：{billMoneySum?billMoneySum:0}元</div>
-                </div>
-                <div style={{ marginTop: windowWidth <= 480 ? '1rem' : '2rem', textAlign: 'center' }}>
-                    <Pagination
-                        showSizeChanger
-                        total={count}
-                        pageSize={pagecount}
-                        current={page}
-                        onChange={onChange}
-                        pageSizeOptions={[50, 100, 500, 1000]}
-                        style={{ backgroundColor: '#fff', padding: '1rem', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)' }}
-                    />
-                </div>
-            </PageLayout>
+                    </Space>
+                </List.Item>
+                <List.Item>
+                    <Space>
+                        <Input
+                            addonBefore="单元名称:"
+                            onChange={(e)=>setunitName(e.target.value)}
+                        />
+                        <Button type="primary" onClick={chaxundanyuan}>
+                            查询单元
+                        </Button>
+                    </Space>
+                </List.Item>
+            </List>
+            <TableMobile
+                style={{border:'1px solid #ddd',borderRadius:'4px'}}
+                columns={columns}
+                size='small'
+                rowKey={(columns) => columns.id}
+                dataSource={ZuhuList}
+                scroll={{x:1500,y:'60vh'}}
+                pagination={false}
+                summary={(columns) => (
+                    <Table.Summary fixed>
+                        <Table.Summary.Row>
+                            <Table.Summary.Cell
+                                index={1}
+                            >
+                                统计
+                            </Table.Summary.Cell>
+                            <Table.Summary.Cell index={0}>
+                                总人数:{count}人
+                            </Table.Summary.Cell>
+                            <Table.Summary.Cell index={0}>
+                            </Table.Summary.Cell>
+                            <Table.Summary.Cell index={0}>
+                            </Table.Summary.Cell>
+                            <Table.Summary.Cell index={6}>
+                                {integralSum.toFixed(2)}分
+                            </Table.Summary.Cell>
+                            <Table.Summary.Cell index={5}>
+                                {balanceSum.toFixed(2)}元
+                            </Table.Summary.Cell>
+                            <Table.Summary.Cell
+                                index={7}
+                            >
+                                {billMoneySum.toFixed(2)}元
+                            </Table.Summary.Cell>
+                            <Table.Summary.Cell
+                                index={8}
+                            >
+                                {depositSum.toFixed(2)}元
+                            </Table.Summary.Cell>
+                        </Table.Summary.Row>
+                    </Table.Summary>
+                )}
+            />
+            <Pagination showSizeChanger total={count} pageSize={pagecount} current={page}  onChange={onChange} pageSizeOptions={[50, 100, 500, 1000]}/>
+            {/*编辑权限弹窗*/}
+            <Modal open={isOpen} title={'编辑权限'} onCancel={()=>setIsOpen(false)} onOk={onOk} loading={isSpinning}>
+                <Space>
+                    <Button type='primary' onClick={()=>setSelected(Array(562).fill('1'))}>全选</Button>
+                    <Button type='primary' onClick={()=>setSelected(Array(562).fill('0'))}>反选</Button>
+                </Space>
+                <TreeMenu tree={treeData} selected={selected} setSelected={setSelected} />
+            </Modal>
         </div>
     )
 }
@@ -176,4 +397,4 @@ const mapStateToProps = (state: any) => {
         count: state.BYZhuhu.count,
     }
 };
-export default connect(mapStateToProps) (Customer)
+export default connect(mapStateToProps) (Zuhuguanlian)

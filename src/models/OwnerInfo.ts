@@ -8,7 +8,7 @@ import * as OwnerInfoService from '@/services/ownerInfo';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import OwnerInfoType from '@/ModelTypes/TypeCable';
+import OwnerInfoType from '@/ModelTypes/TypeOwnerInfo';
 import { fixPathname } from '@/utils/common';
 let pl={
     page:1,
@@ -59,6 +59,7 @@ const OwnerInfoModel: OwnerInfoInterface = {
             } else {
                 message.error(res.ErrorCode + res.Data);
             }
+            return res;
         },
         *fetchOne({ type, payload }, { put, call, select }): any {
             const list = yield select((state: any) => state.Staff.list);
@@ -132,7 +133,12 @@ const OwnerInfoModel: OwnerInfoInterface = {
         setup({ dispatch, history }, done) {
             return history.listen(({ location, action }) => {
                 const pathname = fixPathname(location.pathname);
-
+                if (StaticInfo.userId > 0 && pathname === '/contract/ownerInfo/') {
+                    dispatch({
+                        type: 'fenye',
+                        payload: location.state,
+                    });
+                }
 
 
             });

@@ -8,7 +8,7 @@ import * as DuizhangService from '@/services/duizhang';
 import { message } from 'antd';
 import _ from 'lodash';
 import { StaticInfo } from '@/StaticInfo';
-import DuizhangType from '@/ModelTypes/TypeCable';
+import DuizhangType from '@/ModelTypes/TypeDuizhang';
 import { fixPathname } from '@/utils/common';
 let pl={
     page:1,
@@ -55,6 +55,7 @@ const DuizhangModels: DuizhangInterface = {
             } else {
                 message.error(res.ErrorCode + res.Data);
             }
+            return res;
         },
         *add({ payload }, { call, put,take }): any {
             const result = yield call(DuizhangService.add, payload);
@@ -100,6 +101,18 @@ const DuizhangModels: DuizhangInterface = {
         setup({ dispatch, history }, done) {
             return history.listen(({ location, action }) => {
                 const pathname = fixPathname(location.pathname);
+                if (StaticInfo.userId > 0 && pathname === '/billLog/yinghangka/') {
+                    dispatch({
+                        type: 'fetch',
+                        payload: location.state,
+                    });
+                }
+                if (StaticInfo.userId > 0 && pathname === '/billLog/yinghangka/') {
+                    dispatch({
+                        type: 'fenye',
+                        payload: location.state,
+                    });
+                }
             });
         },
     },
